@@ -1,0 +1,529 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String            @id
+  email            String            @unique
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  aiCreditWallets  AiCreditWallet?
+  billingCustomer  BillingCustomer?
+  campaigns        Campaign[]
+  emailAccounts    EmailAccount[]
+  leadExports      LeadExport[]
+  leadLists        LeadList[]
+  leadSearches     LeadSearch[]
+  lists            List[]
+  subscriptions    Subscription[]
+  tedConversations TedConversation[]
+  aiFeedbacks      AIFeedback[]
+}
+
+model Company {
+  id                 String          @id @default(cuid())
+  name               String
+  domain             String?         @unique
+  websiteUrl         String?
+  country            String?
+  city               String?
+  street             String?
+  postalCode         String?
+  phone              String?
+  source             String
+  category           String?
+  niche              String?
+  tags               String[]        @default([])
+  aiConfidence       Float?
+  lastSeenAt         DateTime?
+  lastCrawledAt      DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  rawContent         String?
+  addressRaw         String?
+  businessType       String?
+  facebookUrl        String?
+  hqCity             String?
+  hqCountry          String?
+  idealCustomerNotes String?
+  industry           String?
+  instagramUrl       String?
+  keywords           String[]        @default([])
+  linkedinUrl        String?
+  sizeBucket         CompanySize?
+  twitterUrl         String?
+  isArchived         Boolean         @default(false)
+  isFavorited        Boolean         @default(false)
+  notes              String?
+  campaignEmails     CampaignEmail[]
+  contacts           Contact[]
+  crawlJobs          CrawlJob[]
+  leadExports        LeadExport[]
+  leadListItems      LeadListItem[]
+  listLeads          ListLead[]
+  leadSearches       LeadSearch[]    @relation("SearchCompanies")
+  aiFeedbacks        AIFeedback[]
+}
+
+model Contact {
+  id                    String          @id @default(cuid())
+  email                 String
+  firstName             String?
+  lastName              String?
+  role                  String?
+  linkedinUrl           String?
+  source                String
+  companyId             String
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  isLikelyDecisionMaker Boolean         @default(false)
+  campaignEmails        CampaignEmail[]
+  company               Company         @relation(fields: [companyId], references: [id])
+  leadExports           LeadExport[]
+  leadListItems         LeadListItem[]
+  listLeads             ListLead[]
+  aiFeedbacks           AIFeedback[]
+
+  @@unique([email, companyId])
+}
+
+model LeadSearch {
+  id           String           @id @default(cuid())
+  query        String
+  niche        String?
+  location     String?
+  maxLeads     Int              @default(100)
+  status       LeadSearchStatus @default(PENDING)
+  errorMessage String?
+  filters      Json?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  userId       String
+  campaigns    Campaign[]
+  crawlJobs    CrawlJob[]
+  leadExports  LeadExport[]
+  user         User             @relation(fields: [userId], references: [id])
+  companies    Company[]        @relation("SearchCompanies")
+  aiFeedbacks  AIFeedback[]
+
+  @@index([userId])
+}
+
+model CrawlJob {
+  id           String         @id @default(cuid())
+  type         CrawlJobType
+  status       CrawlJobStatus @default(PENDING)
+  targetUrl    String?
+  attempts     Int            @default(0)
+  lastError    String?
+  scheduledAt  DateTime?
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  priority     Int            @default(0)
+  companyId    String?
+  leadSearchId String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  company      Company?       @relation(fields: [companyId], references: [id])
+  leadSearch   LeadSearch?    @relation(fields: [leadSearchId], references: [id])
+}
+
+model AiCreditWallet {
+  id           String                @id @default(cuid())
+  userId       String                @unique
+  balance      Int                   @default(0)
+  lastTopupAt  DateTime?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  transactions AiCreditTransaction[]
+  user         User                  @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model AiCreditTransaction {
+  id        String         @id @default(cuid())
+  walletId  String
+  change    Int
+  reason    String
+  metadata  Json?
+  createdAt DateTime       @default(now())
+  wallet    AiCreditWallet @relation(fields: [walletId], references: [id])
+
+  @@index([walletId])
+}
+
+model TedConversation {
+  id        String       @id @default(cuid())
+  userId    String
+  title     String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  user      User         @relation(fields: [userId], references: [id])
+  messages  TedMessage[]
+
+  @@index([userId])
+}
+
+model TedMessage {
+  id             String          @id @default(cuid())
+  conversationId String
+  role           TedMessageRole
+  content        String
+  createdAt      DateTime        @default(now())
+  conversation   TedConversation @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId])
+}
+
+model AIFeedback {
+  id           String   @id @default(cuid())
+  userId       String
+  companyId    String
+  contactId    String?
+  leadSearchId String?
+  rating       Int      // 1-5 or similar
+  feedback     String?
+  aiScore      Float?   // AI's own cooperation/quality score
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
+  company      Company  @relation(fields: [companyId], references: [id])
+  contact      Contact? @relation(fields: [contactId], references: [id])
+  leadSearch   LeadSearch? @relation(fields: [leadSearchId], references: [id])
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([contactId])
+  @@index([leadSearchId])
+  @@unique([userId, companyId, contactId, leadSearchId])
+}
+
+model BillingCustomer {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  stripeCustomerId String   @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id])
+}
+
+model Subscription {
+  id                   String   @id @default(cuid())
+  userId               String
+  stripeSubscriptionId String   @unique
+  planCode             String
+  status               String
+  currentPeriodEnd     DateTime
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id])
+
+  trialStart           DateTime?
+  trialEnd             DateTime?
+  hasUsedTrial         Boolean  @default(false)
+
+  @@index([userId])
+}
+
+model LeadExport {
+  id           String      @id @default(cuid())
+  userId       String
+  companyId    String
+  contactId    String?
+  leadSearchId String?
+  exportedAt   DateTime    @default(now())
+  company      Company     @relation(fields: [companyId], references: [id])
+  contact      Contact?    @relation(fields: [contactId], references: [id])
+  leadSearch   LeadSearch? @relation(fields: [leadSearchId], references: [id])
+  user         User        @relation(fields: [userId], references: [id])
+
+  @@unique([userId, companyId, contactId])
+  @@index([userId])
+  @@index([companyId])
+}
+
+model List {
+  id          String     @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  color       String?
+  leadCount   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  campaigns   Campaign[]
+  user        User       @relation(fields: [userId], references: [id])
+  leads       ListLead[]
+
+  @@index([userId])
+}
+
+model ListLead {
+  id        String   @id @default(cuid())
+  listId    String
+  companyId String
+  contactId String?
+  addedBy   String
+  notes     String?
+  addedAt   DateTime @default(now())
+  company   Company  @relation(fields: [companyId], references: [id])
+  contact   Contact? @relation(fields: [contactId], references: [id])
+  list      List     @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, companyId, contactId])
+  @@index([listId])
+  @@index([companyId])
+}
+
+model LeadList {
+  id          String         @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  user        User           @relation(fields: [userId], references: [id])
+  items       LeadListItem[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model LeadListItem {
+  id          String       @id @default(cuid())
+  leadListId  String
+  companyId   String
+  contactId   String?
+  email       String?
+  firstName   String?
+  lastName    String?
+  role        String?
+  companyName String
+  websiteUrl  String?
+  country     String?
+  city        String?
+  industry    String?
+  sizeBucket  CompanySize?
+  score       Int?
+  createdAt   DateTime     @default(now())
+  company     Company      @relation(fields: [companyId], references: [id])
+  contact     Contact?     @relation(fields: [contactId], references: [id])
+  leadList    LeadList     @relation(fields: [leadListId], references: [id])
+
+  @@index([leadListId])
+  @@index([companyId])
+  @@index([contactId])
+}
+
+model EmailAccount {
+  id                 String                 @id @default(cuid())
+  userId             String
+  email              String                 @unique
+  provider           String
+  fromName           String?
+  smtpHost           String
+  smtpPort           Int
+  smtpUsername       String
+  smtpPassword       String
+  smtpSecure         Boolean                @default(true)
+  imapHost           String?
+  imapPort           Int?
+  imapUsername       String?
+  imapPassword       String?
+  status             EmailAccountStatus     @default(PENDING_VERIFICATION)
+  dailySendLimit     Int                    @default(50)
+  dailySentCount     Int                    @default(0)
+  lastSentAt         DateTime?
+  lastResetAt        DateTime               @default(now())
+  warmupEnabled      Boolean                @default(false)
+  warmupStage        Int                    @default(0)
+  warmupStartedAt    DateTime?
+  bounceRate         Float                  @default(0)
+  replyRate          Float                  @default(0)
+  openRate           Float                  @default(0)
+  totalSent          Int                    @default(0)
+  totalBounced       Int                    @default(0)
+  totalReplied       Int                    @default(0)
+  instantlyAccountId String?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  sentEmails         CampaignEmail[]
+  campaigns          CampaignEmailAccount[]
+  user               User                   @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Campaign {
+  id                 String                 @id @default(cuid())
+  userId             String
+  name               String
+  status             CampaignStatus         @default(DRAFT)
+  leadSearchId       String?
+  scheduleStartAt    DateTime?
+  scheduleEndAt      DateTime?
+  sendTimeStart      String?
+  sendTimeEnd        String?
+  timezone           String                 @default("UTC")
+  dailyLimit         Int                    @default(100)
+  totalLeads         Int                    @default(0)
+  emailsQueued       Int                    @default(0)
+  emailsSent         Int                    @default(0)
+  emailsOpened       Int                    @default(0)
+  emailsReplied      Int                    @default(0)
+  emailsBounced      Int                    @default(0)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  emailsFailed       Int                    @default(0)
+  emailsSentToday    Int                    @default(0)
+  emailsUnsubscribed Int                    @default(0)
+  lastResetAt        DateTime               @default(now())
+  listId             String?
+  leadSearch         LeadSearch?            @relation(fields: [leadSearchId], references: [id])
+  list               List?                  @relation(fields: [listId], references: [id])
+  user               User                   @relation(fields: [userId], references: [id])
+  sentEmails         CampaignEmail[]
+  emailAccounts      CampaignEmailAccount[]
+  steps              CampaignStep[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model CampaignStep {
+  id             String   @id @default(cuid())
+  campaignId     String
+  stepNumber     Int
+  delayDays      Int
+  subjectLine    String
+  bodyTemplate   String
+  variantSubject String?
+  variantBody    String?
+  variantPercent Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, stepNumber])
+  @@index([campaignId])
+}
+
+model CampaignEmailAccount {
+  id             String       @id @default(cuid())
+  campaignId     String
+  emailAccountId String
+  addedAt        DateTime     @default(now())
+  campaign       Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, emailAccountId])
+  @@index([campaignId])
+  @@index([emailAccountId])
+}
+
+model CampaignEmail {
+  id             String       @id @default(cuid())
+  campaignId     String
+  emailAccountId String
+  recipientEmail String
+  recipientName  String?
+  companyId      String?
+  contactId      String?
+  stepNumber     Int
+  isVariant      Boolean      @default(false)
+  subject        String
+  body           String
+  status         EmailStatus  @default(QUEUED)
+  scheduledFor   DateTime
+  sentAt         DateTime?
+  openedAt       DateTime?
+  repliedAt      DateTime?
+  bouncedAt      DateTime?
+  errorMessage   String?
+  retryCount     Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  bounceType     String?
+  error          String?
+  messageId      String?
+  unsubscribedAt DateTime?
+  campaign       Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  company        Company?     @relation(fields: [companyId], references: [id])
+  contact        Contact?     @relation(fields: [contactId], references: [id])
+  emailAccount   EmailAccount @relation(fields: [emailAccountId], references: [id])
+
+  @@index([campaignId])
+  @@index([emailAccountId])
+  @@index([status])
+  @@index([scheduledFor])
+}
+
+enum CrawlJobType {
+  DISCOVERY
+  SITE_CRAWL
+  ENRICHMENT
+}
+
+enum CrawlJobStatus {
+  PENDING
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum LeadSearchStatus {
+  PENDING
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum TedMessageRole {
+  user
+  assistant
+  system
+}
+
+enum CompanySize {
+  MICRO
+  SMALL
+  SMB
+  MIDMARKET
+  ENTERPRISE
+}
+
+enum EmailAccountStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  WARMING_UP
+  PAUSED
+  FAILED
+  SUSPENDED
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+}
+
+enum EmailStatus {
+  QUEUED
+  SCHEDULED
+  SENDING
+  SENT
+  OPENED
+  REPLIED
+  BOUNCED
+  FAILED
+  UNSUBSCRIBED
+}

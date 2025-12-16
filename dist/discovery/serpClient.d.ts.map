@@ -1,0 +1,1 @@
+{"version":3,"file":"serpClient.d.ts","sourceRoot":"","sources":["../../src/discovery/serpClient.ts"],"names":[],"mappings":"AASA,MAAM,WAAW,YAAY;IAC3B,GAAG,EAAE,MAAM,CAAC;IACZ,KAAK,EAAE,MAAM,CAAC;IACd,OAAO,EAAE,MAAM,CAAC;CACjB;AAED;;;;;GAKG;AACH,wBAAsB,YAAY,CAChC,KAAK,EAAE,MAAM,EACb,QAAQ,GAAE,MAAU,GACnB,OAAO,CAAC,YAAY,EAAE,CAAC,CA2DzB"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"queryVariants.d.ts","sourceRoot":"","sources":["../../src/discovery/queryVariants.ts"],"names":[],"mappings":"AAAA;;;;;;;;;;GAUG;AACH,wBAAgB,qBAAqB,CAAC,SAAS,EAAE,MAAM,GAAG,MAAM,EAAE,CA0BjE;AAED;;;;;;;;GAQG;AACH,wBAAgB,gBAAgB,CAAC,KAAK,EAAE,MAAM,GAAG;IAC/C,KAAK,CAAC,EAAE,MAAM,CAAC;IACf,QAAQ,CAAC,EAAE,MAAM,CAAC;IAClB,UAAU,EAAE,MAAM,EAAE,CAAC;CACtB,CAmCA"}

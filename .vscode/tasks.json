@@ -1,0 +1,25 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Install express-rate-limit",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"install",
+				"express-rate-limit"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Install node-cache",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"install",
+				"node-cache"
+			],
+			"group": "build"
+		}
+	]
+}
