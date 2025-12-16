@@ -11,8 +11,6 @@ export interface TedOrchestratorInput {
 
 export interface TedOrchestratorResult {
   messages: Array<{ role: string; content: string }>;
-  actions: Array<{ name: string; args: any; result: any }>;
-  nextStep?: string;
 }
 
 /**
