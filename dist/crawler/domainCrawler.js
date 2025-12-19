@@ -39,7 +39,7 @@ const fetchPage_js_1 = require("./fetchPage.js");
 const urlUtils_js_1 = require("./urlUtils.js");
 const extractors_js_1 = require("./extractors.js");
 const structuredExtractors_js_1 = require("./structuredExtractors.js");
-const logger_js_1 = require("../logger.js");
+const logger_1 = require("../logger");
 /**
  * Crawl a domain using a breadth-first approach
  * Prioritizes pages with interesting paths (contact, about, etc.)
@@ -74,10 +74,10 @@ async function crawlDomain(rootUrl, options = {}) {
     let allEmails = [];
     let allPhones = [];
     let fullText = "";
-    let mergedSocials = {};
+    const mergedSocials = {};
     let addressGuess = { rawText: null };
     let companyName = null;
-    logger_js_1.logger.info("Starting domain crawl", {
+    logger_1.logger.info("Starting domain crawl", {
         rootUrl,
         maxPages,
         maxDepth,
@@ -100,7 +100,7 @@ async function crawlDomain(rootUrl, options = {}) {
         if (depth > maxDepth)
             continue;
         visited.add(url);
-        logger_js_1.logger.info("Crawling page", {
+        logger_1.logger.info("Crawling page", {
             url,
             depth,
             visitedCount: visited.size,
@@ -109,7 +109,7 @@ async function crawlDomain(rootUrl, options = {}) {
         // Fetch page content
         const html = await (0, fetchPage_js_1.fetchPage)(url);
         if (!html) {
-            logger_js_1.logger.warn("Failed to fetch page", { url });
+            logger_1.logger.warn("Failed to fetch page", { url });
             continue;
         }
         // Extract data from this page
@@ -167,7 +167,7 @@ async function crawlDomain(rootUrl, options = {}) {
                 }
             }
         });
-        logger_js_1.logger.info("Page processed", {
+        logger_1.logger.info("Page processed", {
             url,
             emailsFound: pageEmails.length,
             phonesFound: pagePhones.length,
@@ -177,7 +177,7 @@ async function crawlDomain(rootUrl, options = {}) {
     // Deduplicate results
     allEmails = Array.from(new Set(allEmails));
     allPhones = Array.from(new Set(allPhones));
-    logger_js_1.logger.info("Domain crawl completed", {
+    logger_1.logger.info("Domain crawl completed", {
         rootUrl,
         pagesVisited: visited.size,
         emailsFound: allEmails.length,

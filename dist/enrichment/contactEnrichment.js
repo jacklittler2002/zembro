@@ -85,10 +85,10 @@ async function enrichContactsForCompany(company) {
     logger_1.logger.info(`Enriching ${contacts.length} contacts for company ${company.domain}`);
     for (const contact of contacts) {
         // Only guess names if not already set
-        let { firstName, lastName } = contact.firstName
+        const { firstName, lastName } = contact.firstName
             ? { firstName: contact.firstName, lastName: contact.lastName }
             : guessNameFromEmail(contact.email);
-        let role = contact.role ?? null;
+        const role = contact.role ?? null;
         // TODO: Future enhancement - use AI to infer role from:
         // - company.rawContent (look for team/about pages mentioning the email/name)
         // - LinkedIn scraping

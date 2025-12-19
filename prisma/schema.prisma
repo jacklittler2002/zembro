@@ -11,17 +11,25 @@ model User {
   email            String            @unique
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+  aiFeedbacks      AIFeedback[]
   aiCreditWallets  AiCreditWallet?
+  apiKeys          ApiKey[]
+  auditLogs        AuditLog[]
   billingCustomer  BillingCustomer?
   campaigns        Campaign[]
+  creditTransactions CreditTransaction[]
   emailAccounts    EmailAccount[]
+  fileUploads      FileUpload[]
+  integrations     Integration[]
   leadExports      LeadExport[]
   leadLists        LeadList[]
   leadSearches     LeadSearch[]
   lists            List[]
+  notifications    Notification[]
   subscriptions    Subscription[]
   tedConversations TedConversation[]
-  aiFeedbacks      AIFeedback[]
+  preferences      UserPreferences?
+  sessions         UserSession[]
 }
 
 model Company {
@@ -59,6 +67,7 @@ model Company {
   isArchived         Boolean         @default(false)
   isFavorited        Boolean         @default(false)
   notes              String?
+  aiFeedbacks        AIFeedback[]
   campaignEmails     CampaignEmail[]
   contacts           Contact[]
   crawlJobs          CrawlJob[]
@@ -66,7 +75,6 @@ model Company {
   leadListItems      LeadListItem[]
   listLeads          ListLead[]
   leadSearches       LeadSearch[]    @relation("SearchCompanies")
-  aiFeedbacks        AIFeedback[]
 }
 
 model Contact {
@@ -78,37 +86,48 @@ model Contact {
   linkedinUrl           String?
   source                String
   companyId             String
+  leadKey               String?         // Deterministic key for deduplication and charging
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
   isLikelyDecisionMaker Boolean         @default(false)
+  aiFeedbacks           AIFeedback[]
   campaignEmails        CampaignEmail[]
   company               Company         @relation(fields: [companyId], references: [id])
   leadExports           LeadExport[]
   leadListItems         LeadListItem[]
   listLeads             ListLead[]
-  aiFeedbacks           AIFeedback[]
 
   @@unique([email, companyId])
+  @@index([leadKey])
 }
 
 model LeadSearch {
-  id           String           @id @default(cuid())
-  query        String
-  niche        String?
-  location     String?
-  maxLeads     Int              @default(100)
-  status       LeadSearchStatus @default(PENDING)
-  errorMessage String?
-  filters      Json?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  userId       String
-  campaigns    Campaign[]
-  crawlJobs    CrawlJob[]
-  leadExports  LeadExport[]
-  user         User             @relation(fields: [userId], references: [id])
-  companies    Company[]        @relation("SearchCompanies")
-  aiFeedbacks  AIFeedback[]
+  id                 String           @id @default(cuid())
+  query              String
+  niche              String?
+  location           String?
+  maxLeads           Int              @default(100)
+  status             LeadSearchStatus @default(PENDING)
+  errorMessage       String?
+  filters            Json?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  userId             String
+  contactsFoundCount Int              @default(0)
+  crawledCount       Int              @default(0)
+  discoveredCount    Int              @default(0)
+  enrichedCount      Int              @default(0)
+  creditsCharged     Int              @default(0) // Net-new leads that were charged for
+  totalFound         Int              @default(0) // Total leads found before deduplication
+  totalDeduped       Int              @default(0) // Leads removed due to duplication
+  totalNetNew        Int              @default(0) // Net-new unique leads delivered
+  aiFeedbacks        AIFeedback[]
+  campaigns          Campaign[]
+  crawlJobs          CrawlJob[]
+  leadExports        LeadExport[]
+  creditTransactions CreditTransaction[] // Link to credit charges for this search
+  user               User             @relation(fields: [userId], references: [id])
+  companies          Company[]        @relation("SearchCompanies")
 
   @@index([userId])
 }
@@ -157,6 +176,22 @@ model AiCreditTransaction {
   @@index([walletId])
 }
 
+model CreditTransaction {
+  id           String     @id @default(cuid())
+  userId       String
+  leadSearchId String
+  creditsDelta Int        // Negative for charges, positive for refunds
+  reason       String     // "lead_delivered", "refund", etc.
+  leadKey      String     // Deterministic key of the lead that was charged for
+  createdAt    DateTime   @default(now())
+  leadSearch   LeadSearch @relation(fields: [leadSearchId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([leadSearchId])
+  @@index([leadKey])
+}
+
 model TedConversation {
   id        String       @id @default(cuid())
   userId    String
@@ -181,26 +216,26 @@ model TedMessage {
 }
 
 model AIFeedback {
-  id           String   @id @default(cuid())
+  id           String      @id @default(cuid())
   userId       String
   companyId    String
   contactId    String?
   leadSearchId String?
-  rating       Int      // 1-5 or similar
+  rating       Int
   feedback     String?
-  aiScore      Float?   // AI's own cooperation/quality score
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  user         User     @relation(fields: [userId], references: [id])
-  company      Company  @relation(fields: [companyId], references: [id])
-  contact      Contact? @relation(fields: [contactId], references: [id])
+  aiScore      Float?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  company      Company     @relation(fields: [companyId], references: [id])
+  contact      Contact?    @relation(fields: [contactId], references: [id])
   leadSearch   LeadSearch? @relation(fields: [leadSearchId], references: [id])
+  user         User        @relation(fields: [userId], references: [id])
 
+  @@unique([userId, companyId, contactId, leadSearchId])
   @@index([userId])
   @@index([companyId])
   @@index([contactId])
   @@index([leadSearchId])
-  @@unique([userId, companyId, contactId, leadSearchId])
 }
 
 model BillingCustomer {
@@ -213,19 +248,18 @@ model BillingCustomer {
 }
 
 model Subscription {
-  id                   String   @id @default(cuid())
+  id                   String    @id @default(cuid())
   userId               String
-  stripeSubscriptionId String   @unique
+  stripeSubscriptionId String    @unique
   planCode             String
   status               String
   currentPeriodEnd     DateTime
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  user                 User     @relation(fields: [userId], references: [id])
-
-  trialStart           DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  hasUsedTrial         Boolean   @default(false)
   trialEnd             DateTime?
-  hasUsedTrial         Boolean  @default(false)
+  trialStart           DateTime?
+  user                 User      @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
@@ -464,6 +498,118 @@ model CampaignEmail {
   @@index([scheduledFor])
 }
 
+model UserPreferences {
+  id                      String   @id @default(cuid())
+  userId                  String   @unique
+  emailNotifications      Boolean  @default(true)
+  campaignNotifications   Boolean  @default(true)
+  leadSearchNotifications Boolean  @default(true)
+  theme                   String   @default("system")
+  timezone                String   @default("UTC")
+  dateFormat              String   @default("MM/DD/YYYY")
+  currency                String   @default("USD")
+  language                String   @default("en")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  resource   String
+  resourceId String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([resource])
+  @@index([createdAt])
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  key         String    @unique
+  permissions Json      @default("[]")
+  isActive    Boolean   @default(true)
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([key])
+}
+
+model UserSession {
+  id           String   @id @default(cuid())
+  userId       String
+  sessionToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionToken])
+}
+
+model FileUpload {
+  id           String   @id @default(cuid())
+  userId       String
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  bucket       String   @default("uploads")
+  isPublic     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Integration {
+  id         String          @id @default(cuid())
+  userId     String
+  type       IntegrationType
+  name       String
+  config     Json
+  isActive   Boolean         @default(true)
+  lastSyncAt DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+}
+
 enum CrawlJobType {
   DISCOVERY
   SITE_CRAWL
@@ -526,4 +672,27 @@ enum EmailStatus {
   BOUNCED
   FAILED
   UNSUBSCRIBED
+}
+
+enum NotificationType {
+  CAMPAIGN_COMPLETED
+  LEAD_SEARCH_COMPLETED
+  CREDIT_LOW
+  EMAIL_BOUNCED
+  CAMPAIGN_ERROR
+  SYSTEM_MAINTENANCE
+  NEW_FEATURE
+}
+
+enum IntegrationType {
+  ZAPIER
+  MAKE
+  WEBHOOK
+  SLACK
+  DISCORD
+  GOOGLE_SHEETS
+  HUBSPOT
+  SALESFORCE
+  PIPEDRIVE
+  ZOHO
 }

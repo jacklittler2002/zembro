@@ -2,7 +2,7 @@ import { prisma } from "../db";
 import { leadsToCsv, CsvLeadRow } from "./csvExport";
 import { getUserPlanCode } from "../monetization/getPlan";
 
-import { clampByPlan, requireCredits, getEntitlements, PlanLimitError, InsufficientCreditsError } from "../monetization/enforce";
+import { clampByPlan, requireCredits, getEntitlements, PlanLimitError } from "../monetization/enforce";
 
 export async function exportLeadListToCsv(leadListId: string, userId: string) {
   const list = await prisma.leadList.findFirst({

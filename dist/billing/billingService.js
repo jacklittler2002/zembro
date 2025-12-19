@@ -38,43 +38,44 @@ exports.getBillingCustomer = getBillingCustomer;
 exports.getActiveSubscription = getActiveSubscription;
 exports.createSubscriptionCheckoutUrl = createSubscriptionCheckoutUrl;
 exports.createCreditPackCheckoutUrl = createCreditPackCheckoutUrl;
-const db_js_1 = require("../db.js");
-const stripe_js_1 = require("./stripe.js");
-const logger_js_1 = require("../logger.js");
+exports.isTrialEligible = isTrialEligible;
+const db_1 = require("../db");
+const stripe_1 = require("./stripe");
+const logger_1 = require("../logger");
 /**
  * Get or create a Stripe customer and BillingCustomer record for a user
  */
 async function getOrCreateBillingCustomer(userId, email) {
     // Check if billing customer already exists
-    let billingCustomer = await db_js_1.prisma.billingCustomer.findUnique({
+    let billingCustomer = await db_1.prisma.billingCustomer.findUnique({
         where: { userId },
     });
     if (billingCustomer) {
         return billingCustomer;
     }
     // Create Stripe customer
-    const stripeCustomer = await stripe_js_1.stripe.customers.create({
+    const stripeCustomer = await stripe_1.stripe.customers.create({
         email,
         metadata: {
             userId,
         },
     });
-    logger_js_1.logger.info(`Created Stripe customer ${stripeCustomer.id} for user ${userId}`);
+    logger_1.logger.info(`Created Stripe customer ${stripeCustomer.id} for user ${userId}`);
     // Create BillingCustomer record
-    billingCustomer = await db_js_1.prisma.billingCustomer.create({
+    billingCustomer = await db_1.prisma.billingCustomer.create({
         data: {
             userId,
             stripeCustomerId: stripeCustomer.id,
         },
     });
-    logger_js_1.logger.info(`Created BillingCustomer record for user ${userId}`);
+    logger_1.logger.info(`Created BillingCustomer record for user ${userId}`);
     return billingCustomer;
 }
 /**
  * Get billing customer by user ID
  */
 async function getBillingCustomer(userId) {
-    return db_js_1.prisma.billingCustomer.findUnique({
+    return db_1.prisma.billingCustomer.findUnique({
         where: { userId },
     });
 }
@@ -82,7 +83,7 @@ async function getBillingCustomer(userId) {
  * Get active subscription for a user
  */
 async function getActiveSubscription(userId) {
-    return db_js_1.prisma.subscription.findFirst({
+    return db_1.prisma.subscription.findFirst({
         where: {
             userId,
             status: "active",
@@ -98,7 +99,7 @@ async function getActiveSubscription(userId) {
 async function createSubscriptionCheckoutUrl(userId, planCode) {
     const { SUBSCRIPTION_PLANS } = await Promise.resolve().then(() => __importStar(require("./creditPricing.js")));
     // Get user email from Supabase
-    const user = await db_js_1.prisma.user.findUnique({
+    const user = await db_1.prisma.user.findUnique({
         where: { id: userId },
         select: { email: true },
     });
@@ -110,7 +111,7 @@ async function createSubscriptionCheckoutUrl(userId, planCode) {
     if (!plan.priceId) {
         throw new Error(`Price ID not configured for plan ${planCode}`);
     }
-    const session = await stripe_js_1.stripe.checkout.sessions.create({
+    const session = await stripe_1.stripe.checkout.sessions.create({
         mode: "subscription",
         customer: billingCustomer.stripeCustomerId,
         line_items: [
@@ -134,7 +135,7 @@ async function createSubscriptionCheckoutUrl(userId, planCode) {
 async function createCreditPackCheckoutUrl(userId, packCode) {
     const { CREDIT_PACKS } = await Promise.resolve().then(() => __importStar(require("./creditPricing.js")));
     // Get user email from Supabase
-    const user = await db_js_1.prisma.user.findUnique({
+    const user = await db_1.prisma.user.findUnique({
         where: { id: userId },
         select: { email: true },
     });
@@ -146,7 +147,7 @@ async function createCreditPackCheckoutUrl(userId, packCode) {
     if (!pack.priceId) {
         throw new Error(`Price ID not configured for pack ${packCode}`);
     }
-    const session = await stripe_js_1.stripe.checkout.sessions.create({
+    const session = await stripe_1.stripe.checkout.sessions.create({
         mode: "payment",
         customer: billingCustomer.stripeCustomerId,
         line_items: [
@@ -164,5 +165,33 @@ async function createCreditPackCheckoutUrl(userId, packCode) {
         },
     });
     return session.url;
+}
+/**
+ * Check if a user is eligible for a trial on a specific plan
+ */
+async function isTrialEligible(userId, planCode) {
+    // Only STARTER plan is trial eligible
+    if (planCode !== "STARTER") {
+        return false;
+    }
+    // Check if user has ever used a trial
+    const previousTrial = await db_1.prisma.subscription.findFirst({
+        where: {
+            userId,
+            hasUsedTrial: true,
+        },
+    });
+    if (previousTrial) {
+        return false;
+    }
+    // Check if user has any active or past paid subscription
+    const paidSubscription = await db_1.prisma.subscription.findFirst({
+        where: {
+            userId,
+            status: { in: ["active", "past_due", "canceled"] },
+            planCode: { not: "FREE" }, // FREE is not considered paid
+        },
+    });
+    return !paidSubscription;
 }
 //# sourceMappingURL=billingService.js.map

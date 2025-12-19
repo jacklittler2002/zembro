@@ -1,1 +1,1 @@
-{"version":3,"file":"handleEnrichmentJob.d.ts","sourceRoot":"","sources":["../../src/enrichment/handleEnrichmentJob.ts"],"names":[],"mappings":"AAIA,OAAO,EAAE,QAAQ,EAAE,MAAM,kBAAkB,CAAC;AAE5C,wBAAsB,mBAAmB,CAAC,GAAG,EAAE,QAAQ,iBAqDtD"}
+{"version":3,"file":"handleEnrichmentJob.d.ts","sourceRoot":"","sources":["../../src/enrichment/handleEnrichmentJob.ts"],"names":[],"mappings":"AAIA,OAAO,EAAE,QAAQ,EAAE,MAAM,kBAAkB,CAAC;AAE5C,wBAAsB,mBAAmB,CAAC,GAAG,EAAE,QAAQ,iBAkEtD"}

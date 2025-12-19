@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.authMiddleware = authMiddleware;
 const supabaseAdmin_1 = require("./supabaseAdmin");
 const db_1 = require("../db");
-const billingService_js_1 = require("../billing/billingService.js");
+const billingService_1 = require("../billing/billingService");
 async function authMiddleware(req, res, next) {
     try {
         const authHeader = req.headers.authorization;
@@ -28,7 +28,7 @@ async function authMiddleware(req, res, next) {
         // Ensure billing customer exists (creates Stripe customer if needed)
         // TODO: This could be moved to a background job for better performance
         try {
-            await (0, billingService_js_1.getOrCreateBillingCustomer)(dbUser.id, dbUser.email);
+            await (0, billingService_1.getOrCreateBillingCustomer)(dbUser.id, dbUser.email);
         }
         catch (err) {
             console.error("Failed to create billing customer:", err);

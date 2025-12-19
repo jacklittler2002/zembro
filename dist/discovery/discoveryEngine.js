@@ -4,7 +4,7 @@ exports.discoverCandidateSites = discoverCandidateSites;
 exports.scoreDiscoveredSite = scoreDiscoveredSite;
 const serpClient_js_1 = require("./serpClient.js");
 const domainUtils_js_1 = require("../utils/domainUtils.js");
-const logger_js_1 = require("../logger.js");
+const logger_1 = require("../logger");
 const queryVariants_js_1 = require("./queryVariants.js");
 /**
  * Discover candidate business sites using web search
@@ -24,7 +24,7 @@ async function discoverCandidateSites(baseQuery, options = {}) {
     const pagesPerQuery = options.pagesPerQuery ?? 1;
     const maxResults = options.maxResults ?? 100;
     const queries = (0, queryVariants_js_1.buildDiscoveryQueries)(baseQuery);
-    logger_js_1.logger.info("Running discovery with query variants", {
+    logger_1.logger.info("Running discovery with query variants", {
         baseQuery,
         variantCount: queries.length,
         queries,
@@ -32,33 +32,52 @@ async function discoverCandidateSites(baseQuery, options = {}) {
         maxResults,
     });
     const all = [];
-    // Search each query variant
+    // 1. Serper (Google/Bing)
     for (const q of queries) {
         const results = await (0, serpClient_js_1.serperSearch)(q, pagesPerQuery);
         for (const r of results) {
             const domain = (0, domainUtils_js_1.normalizeDomainFromUrl)(r.url);
-            if (!domain) {
-                logger_js_1.logger.info("Skipping result with invalid domain", { url: r.url });
+            if (!domain)
                 continue;
-            }
-            if (!(0, domainUtils_js_1.isLikelyBusinessDomain)(domain)) {
-                logger_js_1.logger.info("Skipping non-business domain", { domain, url: r.url });
+            if (!(0, domainUtils_js_1.isLikelyBusinessDomain)(domain))
                 continue;
-            }
-            all.push({
-                url: r.url,
-                domain,
-                title: r.title,
-                snippet: r.snippet,
-            });
+            all.push({ url: r.url, domain, title: r.title, snippet: r.snippet });
         }
-        logger_js_1.logger.info("Processed query variant", {
-            query: q,
-            resultsFound: results.length,
-            totalSoFar: all.length,
-        });
     }
-    logger_js_1.logger.info("Discovery collected raw results", {
+    // 2. LinkedIn (API or scraping)
+    if (process.env.LINKEDIN_API_KEY) {
+        try {
+            // TODO: Implement LinkedIn company search here
+            // const linkedinResults = await fetchLinkedInCompanies(baseQuery)
+            // all.push(...linkedinResults)
+        }
+        catch (err) {
+            logger_1.logger.warn(`LinkedIn discovery failed: ${err}`);
+        }
+    }
+    // 3. Apollo.io (API)
+    if (process.env.APOLLO_API_KEY) {
+        try {
+            // TODO: Implement Apollo company search here
+            // const apolloResults = await fetchApolloCompanies(baseQuery)
+            // all.push(...apolloResults)
+        }
+        catch (err) {
+            logger_1.logger.warn(`Apollo discovery failed: ${err}`);
+        }
+    }
+    // 4. BuiltWith/Wappalyzer (tech stack search)
+    if (process.env.BUILTWITH_API_KEY) {
+        try {
+            // TODO: Implement BuiltWith search here
+            // const builtWithResults = await fetchBuiltWithCompanies(baseQuery)
+            // all.push(...builtWithResults)
+        }
+        catch (err) {
+            logger_1.logger.warn(`BuiltWith discovery failed: ${err}`);
+        }
+    }
+    logger_1.logger.info("Discovery collected raw results", {
         baseQuery,
         totalBeforeDedup: all.length,
     });
@@ -70,14 +89,14 @@ async function discoverCandidateSites(baseQuery, options = {}) {
         }
     }
     const deduped = Array.from(byDomain.values());
-    logger_js_1.logger.info("Discovery deduplicated results", {
+    logger_1.logger.info("Discovery deduplicated results", {
         baseQuery,
         totalAfterDedup: deduped.length,
         uniqueDomains: deduped.length,
     });
     // Limit to maxResults
     if (deduped.length > maxResults) {
-        logger_js_1.logger.info("Limiting discovery results to maxResults", {
+        logger_1.logger.info("Limiting discovery results to maxResults", {
             found: deduped.length,
             maxResults,
         });

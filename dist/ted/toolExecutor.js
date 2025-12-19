@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.executeTool = executeTool;
 const logger_1 = require("../logger");
@@ -16,22 +49,80 @@ async function executeTool(userId, toolName, args) {
     logger_1.logger.info(`TED executing tool: ${toolName}`, { userId, args });
     try {
         switch (toolName) {
-            case "create_lead_search":
+            case "create_lead_search": {
                 return await handleCreateLeadSearch(userId, args);
-            case "get_lead_search_status":
+            }
+            case "get_lead_search_status": {
                 return await handleGetLeadSearchStatus(userId, args);
-            case "get_leads":
+            }
+            case "get_leads": {
                 return await handleGetLeads(userId, args);
-            case "export_leads_to_csv":
+            }
+            case "export_leads_to_csv": {
                 return await handleExportLeadsToCsv(userId, args);
-            case "get_credit_balance":
+            }
+            case "get_credit_balance": {
                 return await handleGetCreditBalance(userId);
-            case "estimate_credits":
+            }
+            case "estimate_credits": {
                 return await handleEstimateCredits(args);
-            case "list_user_lead_searches":
+            }
+            case "list_user_lead_searches": {
                 return await handleListUserLeadSearches(userId, args);
-            default:
+            }
+            case "create_campaign": {
+                return await handleCreateCampaign(userId, args);
+            }
+            case "import_leads_to_campaign": {
+                return await handleImportLeadsToCampaign(userId, args);
+            }
+            case "update_campaign_status": {
+                return await handleUpdateCampaignStatus(userId, args);
+            }
+            case "get_campaign_stats": {
+                return await handleGetCampaignStats(userId, args);
+            }
+            default: {
                 return JSON.stringify({ error: `Unknown tool: ${toolName}` });
+            }
+        }
+        // --- Campaign/Outreach handlers ---
+        async function handleCreateCampaign(userId, args) {
+            const { name, emailAccountIds, leadSearchId, listId, steps, scheduleStartAt, scheduleEndAt, sendTimeStart, sendTimeEnd, timezone, dailyLimit } = args;
+            const { createCampaign } = await Promise.resolve().then(() => __importStar(require("../email/campaignService")));
+            const campaign = await createCampaign({
+                userId,
+                name,
+                emailAccountIds,
+                leadSearchId,
+                listId,
+                steps,
+                scheduleStartAt,
+                scheduleEndAt,
+                sendTimeStart,
+                sendTimeEnd,
+                timezone,
+                dailyLimit,
+            });
+            return JSON.stringify({ success: true, campaignId: campaign.id, name: campaign.name });
+        }
+        async function handleImportLeadsToCampaign(userId, args) {
+            const { campaignId, ...options } = args;
+            const { importLeadsFromSearch } = await Promise.resolve().then(() => __importStar(require("../email/campaignService")));
+            const result = await importLeadsFromSearch(campaignId, userId, options);
+            return JSON.stringify({ success: true, ...result });
+        }
+        async function handleUpdateCampaignStatus(userId, args) {
+            const { campaignId, status } = args;
+            const { updateCampaignStatus } = await Promise.resolve().then(() => __importStar(require("../email/campaignService")));
+            await updateCampaignStatus(campaignId, userId, status);
+            return JSON.stringify({ success: true, campaignId, status });
+        }
+        async function handleGetCampaignStats(userId, args) {
+            const { campaignId } = args;
+            const { getCampaignStats } = await Promise.resolve().then(() => __importStar(require("../email/emailSendingService")));
+            const stats = await getCampaignStats(campaignId);
+            return JSON.stringify({ success: true, campaignId, stats });
         }
     }
     catch (error) {

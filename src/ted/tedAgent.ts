@@ -1,7 +1,6 @@
 import OpenAI from "openai";
 import { executeTedTool } from "./tools/executeTool";
 import { TedToolName } from "./tools/tedTools.js";
-import { logger } from "../logger.js";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
@@ -195,7 +194,7 @@ Talk naturally. Be helpful. Get things done.
 `;
 
   // We run a tool-calling loop (model -> tool -> model) per OpenAI guidance.
-  let messages: Array<OpenAI.Chat.ChatCompletionMessageParam> = [
+  const messages: Array<OpenAI.Chat.ChatCompletionMessageParam> = [
     { role: "system", content: system },
   ];
 

@@ -4,24 +4,23 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import { logger } from "./logger";
 import { handleTedChat } from "./ted/tedService";
-import { getCreditBalance, consumeCredits } from "./ted/creditService";
-import { listUserConversations, getConversation, createConversation, appendMessage } from "./ted/conversationService";
-import { runTedAgent } from "./ted/tedAgent";
+import { getCreditBalance } from "./ted/creditService";
+import { listUserConversations, getConversation } from "./ted/conversationService";
 import { exportLeadSearchToCsv } from "./export/leadSearchExportService";
 import { getLeadSearchById, getLeadSearchLeads } from "./leadSearch/leadSearchService";
 import { prisma } from "./db";
-import { authMiddleware, AuthedRequest } from "./auth/authMiddleware.js";
-import billingRoutes from "./billing/billingRoutes.js";
-import webhookRoutes from "./billing/webhookRoutes.js";
-import { CreditError } from "./ted/creditService.js";
-import { getUserPlanCode } from "./billing/getUserPlan.js";
-import { PLAN_LIMITS } from "./billing/planLimits.js";
+import { authMiddleware, AuthedRequest } from "./auth/authMiddleware";
+import billingRoutes from "./billing/billingRoutes";
+import webhookRoutes from "./billing/webhookRoutes";
+import { CreditError } from "./ted/creditService";
+import { getUserPlanCode } from "./billing/getUserPlan";
+import { PLAN_LIMITS } from "./billing/planLimits";
 import {
   testSmtpConnection,
   addEmailAccount,
   getUserEmailAccounts,
   deleteEmailAccount,
-} from "./email/emailAccountService.js";
+} from "./email/emailAccountService";
 import {
   createCampaign,
   getCampaignById,
@@ -29,15 +28,16 @@ import {
   updateCampaignStatus,
   deleteCampaign,
   importLeadsFromSearch,
-} from "./email/campaignService.js";
-import { getCampaignStats } from "./email/emailSendingService.js";
+} from "./email/campaignService";
+import { getCampaignStats } from "./email/emailSendingService";
 import {
   purchaseInstantlyAccounts,
   handleInstantlyWebhook,
-} from "./email/instantlyService.js";
-import { mountListRoutes } from "./routes/lists.js";
+} from "./email/instantlyService";
+import { mountListRoutes } from "./routes/lists";
 import leadSearchProgressRouter from "./routes/leadSearchProgress";
 import { cacheMiddleware } from "./utils/cache";
+import { PolicyMiddleware } from "./policies/policyMiddleware";
 
 const app = express();
 
@@ -70,6 +70,9 @@ app.use(webhookRoutes);
 
 app.use(bodyParser.json());
 
+// Attach policy enforcer to all requests
+app.use(PolicyMiddleware.attachEnforcer);
+
 // Health check endpoint
 app.get("/health", async (req, res) => {
   try {
@@ -89,7 +92,10 @@ app.use(billingRoutes);
  * Send a message to TED and get a response.
  * Body: { message: string, conversationId?: string }
  */
-app.post("/api/ted/chat", authMiddleware, async (req: AuthedRequest, res) => {
+app.post("/api/ted/chat", 
+  authMiddleware, 
+  PolicyMiddleware.check("ted", "chat"),
+  async (req: AuthedRequest, res) => {
   try {
     const { message, conversationId } = req.body;
     const userId = req.userId!;
@@ -100,50 +106,15 @@ app.post("/api/ted/chat", authMiddleware, async (req: AuthedRequest, res) => {
       });
     }
 
-    // Load conversation context if conversationId provided
-    let conversationContext: Array<{ role: "user" | "assistant"; content: string }> = [];
-    if (conversationId) {
-      const conversation = await getConversation(conversationId);
-      if (conversation && conversation.userId === userId) {
-        const messages = await prisma.tedMessage.findMany({
-          where: { conversationId },
-          orderBy: { createdAt: "asc" },
-          take: 12, // Last 12 messages for context
-        });
-        conversationContext = messages.map((m: any) => ({
-          role: m.role as "user" | "assistant",
-          content: m.content,
-        }));
-      }
-    }
-
-    // Use new TED agent instead of old heuristic-based service
-    const result = await runTedAgent({ 
-      userId, 
-      message,
-      conversationContext,
-    });
-
-    // Save conversation if needed (optional - you can create conversation on first message)
-    let convId = conversationId;
-    if (!convId) {
-      convId = await createConversation(userId, "Chat with TED");
-    }
-    await appendMessage(convId, "user", message);
-    await appendMessage(convId, "assistant", result.reply);
-
-    // Deduct 1 credit for TED message
-    await consumeCredits(userId, 1, "TED_MESSAGE", { conversationId: convId });
-    const newBalance = await getCreditBalance(userId);
+    // Use TED service instead of old agent
+    const result = await handleTedChat(userId, message, conversationId);
 
     return res.json({
       success: true,
-      conversationId: convId,
-      assistantMessage: result.reply,
-      csv: result.csv ?? null,
-      upgradeUrl: result.upgradeUrl ?? null,
-      creditsUsed: 1,
-      remainingBalance: result.remainingCredits ?? newBalance,
+      conversationId: result.conversationId,
+      assistantMessage: result.assistantMessage,
+      creditsUsed: result.creditsUsed,
+      remainingBalance: result.remainingBalance,
     });
   } catch (error: any) {
     logger.error(`Error in /api/ted/chat: ${error.message}`);
@@ -214,7 +185,6 @@ app.get("/api/ted/conversations", authMiddleware, async (req: AuthedRequest, res
 app.get("/api/ted/conversation/:conversationId", authMiddleware, async (req: AuthedRequest, res) => {
   try {
     const { conversationId } = req.params;
-    const userId = req.userId!;
     
     if (!conversationId) {
       return res.status(400).json({ error: "Missing conversationId" });
@@ -265,8 +235,8 @@ app.get("/health", async (req, res) => {
  */
 app.post("/api/lead-searches", authMiddleware, async (req: AuthedRequest, res) => {
   try {
-    const { query, maxLeads, filters } = req.body;
     const userId = req.userId!;
+    const { query, maxLeads, filters } = req.body;
 
     if (!query) {
       return res.status(400).json({
@@ -274,8 +244,20 @@ app.post("/api/lead-searches", authMiddleware, async (req: AuthedRequest, res) =
       });
     }
 
-    // createLeadSearch is not implemented; return 501
-    return res.status(501).json({ error: "Not implemented" });
+    const { LeadSearchService } = await import("./leadSearch/leadSearchService");
+    const service = new LeadSearchService();
+    const leadSearch = await service.createLeadSearch({
+      userId,
+      query,
+      maxLeads,
+      filters,
+    });
+
+    return res.json({
+      success: true,
+      leadSearch,
+      message: "Lead search created. Credits will be charged only for net-new leads found.",
+    });
   } catch (error: any) {
     logger.error(`Error in /api/lead-searches: ${error.message}`);
     if (error?.code === "PLAN_LIMIT_REACHED") {
@@ -283,6 +265,13 @@ app.post("/api/lead-searches", authMiddleware, async (req: AuthedRequest, res) =
         error: "PLAN_LIMIT_REACHED",
         limit: error.limit,
         allowed: error.allowed,
+      });
+    }
+    if (error.message?.includes("Insufficient credits")) {
+      return res.status(402).json({
+        error: error.message,
+        code: "INSUFFICIENT_CREDITS",
+        upgradeSuggestion: true,
       });
     }
     return res.status(500).json({
@@ -307,11 +296,28 @@ app.get(
       where: { userId },
       orderBy: { createdAt: "desc" },
       take: 50,
+      select: {
+        id: true,
+        query: true,
+        status: true,
+        errorMessage: true,
+        createdAt: true,
+        updatedAt: true,
+        contactsFoundCount: true,
+        crawledCount: true,
+        discoveredCount: true,
+        enrichedCount: true,
+        creditsCharged: true,
+        totalFound: true,
+        totalDeduped: true,
+        totalNetNew: true,
+      },
     });
 
     return res.json({
       success: true,
       leadSearches,
+      message: "Credits are charged per net-new lead delivered (1 credit = 1 unique lead)",
     });
   } catch (error: any) {
     logger.error(`Error in /api/lead-searches: ${error.message}`);
@@ -705,7 +711,7 @@ app.get(
       pageSize,
     } = req.query;
 
-    const { getLeads } = await import("./leads/leadService.js");
+    const { getLeads } = await import("./leads/leadService");
     const result = await getLeads({
       userId,
       ...(industry && { industry: industry as string }),
@@ -740,7 +746,7 @@ app.get(
   try {
     const userId = req.userId!;
 
-    const { getLeadStats } = await import("./leads/leadService.js");
+    const { getLeadStats } = await import("./leads/leadService");
     const stats = await getLeadStats(userId);
 
     res.json(stats);

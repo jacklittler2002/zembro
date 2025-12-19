@@ -2,9 +2,15 @@ import { config } from "./config";
 import { logger } from "./logger";
 import { prisma } from "./db";
 import { startHttpServer } from "./httpServer";
+import { PolicyRegistry } from "./policies/policyRegistry";
 
 async function bootstrap() {
   logger.info(`${config.appName} starting in ${config.env} mode`);
+
+  // Initialize policy system
+  logger.info("Initializing policy system...");
+  await PolicyRegistry.initialize(prisma);
+  logger.info("✓ Policy system initialized");
 
   // Database connection check with retry
   try {

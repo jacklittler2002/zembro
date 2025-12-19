@@ -18,7 +18,7 @@
     "seed:tedcredits": "ts-node-dev --transpile-only src/dev/grantInitialTedCredits.ts",
     "seed:devuser": "ts-node-dev --transpile-only src/dev/createDevUser.ts",
     "grant:devcredits": "ts-node-dev --transpile-only src/dev/grantDevCredits.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -45,13 +45,20 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@types/cheerio": "^0.22.35",
     "@types/cors": "^2.8.19",
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.10.2",
     "@types/nodemailer": "^7.0.4",
     "@types/pg": "^8.16.0",
+    "@typescript-eslint/eslint-plugin": "^8.50.0",
+    "@typescript-eslint/parser": "^8.50.0",
     "axios": "^1.13.2",
     "cheerio": "^1.1.2",
-    "tsx": "^4.21.0"
+    "eslint": "^9.39.2",
+    "globals": "^16.5.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6"
   }
 }

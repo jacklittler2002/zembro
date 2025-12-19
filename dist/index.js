@@ -4,8 +4,13 @@ const config_1 = require("./config");
 const logger_1 = require("./logger");
 const db_1 = require("./db");
 const httpServer_1 = require("./httpServer");
+const policyRegistry_1 = require("./policies/policyRegistry");
 async function bootstrap() {
     logger_1.logger.info(`${config_1.config.appName} starting in ${config_1.config.env} mode`);
+    // Initialize policy system
+    logger_1.logger.info("Initializing policy system...");
+    await policyRegistry_1.PolicyRegistry.initialize(db_1.prisma);
+    logger_1.logger.info("✓ Policy system initialized");
     // Database connection check with retry
     try {
         logger_1.logger.info("Connecting to database...");

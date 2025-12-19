@@ -3,11 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.exportLeadListToCsv = exportLeadListToCsv;
 const db_1 = require("../db");
 const csvExport_1 = require("./csvExport");
-const creditService_1 = require("../ted/creditService");
-const creditPricing_1 = require("../billing/creditPricing");
-const getUserPlan_1 = require("../billing/getUserPlan");
-const planLimits_1 = require("../billing/planLimits");
-async function exportLeadListToCsv(userId, leadListId) {
+const getPlan_1 = require("../monetization/getPlan");
+const enforce_1 = require("../monetization/enforce");
+async function exportLeadListToCsv(leadListId, userId) {
     const list = await db_1.prisma.leadList.findFirst({
         where: { id: leadListId, userId },
         include: { items: true },
@@ -15,27 +13,14 @@ async function exportLeadListToCsv(userId, leadListId) {
     if (!list)
         throw new Error("Lead list not found");
     const contacts = list.items.filter((i) => !!i.email).length;
-    const plan = await (0, getUserPlan_1.getUserPlanCode)(userId);
-    const limits = planLimits_1.PLAN_LIMITS[plan];
-    if (contacts > limits.maxExportContactsPerExport) {
-        const err = new Error("UPGRADE_REQUIRED");
-        err.code = "UPGRADE_REQUIRED";
-        err.limit = "maxExportContactsPerExport";
-        err.allowed = limits.maxExportContactsPerExport;
-        err.plan = plan;
-        throw err;
+    const plan = await (0, getPlan_1.getUserPlanCode)(userId);
+    const ent = (0, enforce_1.getEntitlements)(plan);
+    const cappedContacts = (0, enforce_1.clampByPlan)(plan, contacts, "maxExportContactsPerExport");
+    if (contacts > ent.maxExportContactsPerExport) {
+        throw new enforce_1.PlanLimitError({ limit: "maxExportContactsPerExport", allowed: ent.maxExportContactsPerExport, plan });
     }
-    const required = Math.ceil(contacts * creditPricing_1.CREDIT_COSTS.EXPORT_PER_CONTACT);
-    const balance = await (0, creditService_1.getCreditBalance)(userId);
-    if (balance < required) {
-        const err = new Error("INSUFFICIENT_CREDITS");
-        err.code = "INSUFFICIENT_CREDITS";
-        err.required = required;
-        err.available = balance;
-        err.contacts = contacts;
-        throw err;
-    }
-    await (0, creditService_1.consumeCredits)(userId, required, "LEAD_EXPORT");
+    const required = cappedContacts; // CREDIT_PRICING.EXPORT_CONTACT is 1 per contact
+    await (0, enforce_1.requireCredits)(userId, required, "EXPORT_CONTACT");
     const rows = list.items.map((i) => ({
         email: i.email ?? "",
         first_name: i.firstName ?? "",

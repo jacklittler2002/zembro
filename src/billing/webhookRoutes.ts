@@ -1,9 +1,9 @@
 import { Router, raw } from "express";
-import { stripe } from "./stripe.js";
-import { prisma } from "../db.js";
-import { addCredits } from "../ted/creditService.js";
-import { PLAN_MONTHLY_CREDITS, CREDIT_PACKS } from "./creditPricing.js";
-import { logger } from "../logger.js";
+import { stripe } from "./stripe";
+import { prisma } from "../db";
+import { addCredits } from "../ted/creditService";
+import { PLAN_MONTHLY_CREDITS } from "./creditPricing";
+import { logger } from "../logger";
 
 const router = Router();
 
@@ -180,7 +180,11 @@ async function handleSubscriptionUpdated(stripeSubscription: any) {
     // Determine plan code from metadata or price
     const planCode = stripeSubscription.metadata?.planCode || "STARTER";
 
-    // Check if user has used a trial before
+    // Check if this plan is trial eligible and user hasn't used trial
+    const { SUBSCRIPTION_PLANS } = await import("./creditPricing.js");
+    const plan = SUBSCRIPTION_PLANS[planCode as keyof typeof SUBSCRIPTION_PLANS];
+    const isTrialEligible = plan?.trialEligible;
+
     const previousTrial = await prisma.subscription.findFirst({
       where: {
         userId: billingCustomer.userId,
@@ -191,8 +195,8 @@ async function handleSubscriptionUpdated(stripeSubscription: any) {
     let trialStart = null;
     let trialEnd = null;
     let hasUsedTrial = false;
-    if (!previousTrial) {
-      // Grant a one-week trial
+    if (isTrialEligible && !previousTrial) {
+      // Grant a one-week trial only for eligible plans
       trialStart = new Date();
       trialEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       hasUsedTrial = true;
@@ -214,12 +218,22 @@ async function handleSubscriptionUpdated(stripeSubscription: any) {
     logger.info(`Created subscription record for user ${billingCustomer.userId} (trial: ${!previousTrial})`);
   } else {
     // Update existing subscription
+    const updateData: any = {
+      status: stripeSubscription.status,
+      currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+    };
+
+    // Update trial info if present
+    if (stripeSubscription.trial_end) {
+      updateData.trialEnd = new Date(stripeSubscription.trial_end * 1000);
+    }
+    if (stripeSubscription.trial_start) {
+      updateData.trialStart = new Date(stripeSubscription.trial_start * 1000);
+    }
+
     await prisma.subscription.update({
       where: { id: subscription.id },
-      data: {
-        status: stripeSubscription.status,
-        currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
-      },
+      data: updateData,
     });
 
     logger.info(`Updated subscription for user ${subscription.userId}`);

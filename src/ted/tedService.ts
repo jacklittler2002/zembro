@@ -1,13 +1,13 @@
-import { logger } from "../logger.js";
-import { getCreditBalance, consumeCredits, CreditError } from "./creditService.js";
+import { logger } from "../logger";
+import { getCreditBalance, consumeCredits, CreditError } from "./creditService";
 import {
   createConversation,
   appendMessage,
   getConversation,
-} from "./conversationService.js";
-import { openai } from "../ai/openaiClient.js";
-import { TED_TOOLS, TED_SYSTEM_PROMPT } from "./tools.js";
-import { executeTool } from "./toolExecutor.js";
+} from "./conversationService";
+import { openai } from "../ai/openaiClient";
+import { TED_TOOLS, TED_SYSTEM_PROMPT } from "./tools";
+import { executeTool } from "./toolExecutor";
 
 const CREDITS_PER_MESSAGE = 1;
 

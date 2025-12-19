@@ -2,7 +2,8 @@ import { prisma } from "../db";
 import { enqueueJob } from "../jobs/jobService";
 import { logger } from "../logger";
 import { getUserPlanCode } from "../monetization/getPlan";
-import { clampByPlan, getEntitlements, requireCredits, PlanLimitError } from "../monetization/enforce";
+import { clampByPlan, getEntitlements, PlanLimitError } from "../monetization/enforce";
+import { PolicyAwareService } from "../policies/policyIntegration";
 
 export interface CreateLeadSearchInput {
   userId?: string;
@@ -12,53 +13,115 @@ export interface CreateLeadSearchInput {
 }
 
 /**
- * Create a new LeadSearch and immediately enqueue a DISCOVERY job
+ * Lead Search Service with Policy Enforcement
+ * Extends PolicyAwareService for automatic policy checks
  */
-export async function createLeadSearch(input: CreateLeadSearchInput) {
-  const plan = await getUserPlanCode(input.userId!);
-  const ent = getEntitlements(plan);
+export class LeadSearchService extends PolicyAwareService {
+  /**
+   * Create a new LeadSearch with policy enforcement
+   */
+  async createLeadSearch(input: CreateLeadSearchInput) {
+    const userId = input.userId!;
+    
+    // Enforce policy before proceeding
+    await this.enforce(userId, "create", "leadSearch", input);
+    
+    // Validate input data
+    await this.validate(userId, "leadSearch", "create", input);
 
-  const activeCount = await prisma.leadSearch.count({
-    where: {
-      userId: input.userId!,
-      status: { in: ["PENDING", "RUNNING"] },
-    },
-  });
-  if (activeCount >= ent.maxActiveSearches) {
-    throw new PlanLimitError({ limit: "maxActiveSearches", allowed: ent.maxActiveSearches });
+    const plan = await getUserPlanCode(userId);
+    const ent = getEntitlements(plan);
+
+    const activeCount = await prisma.leadSearch.count({
+      where: {
+        userId: userId,
+        status: { in: ["PENDING", "RUNNING"] },
+      },
+    });
+    if (activeCount >= ent.maxActiveSearches) {
+      throw new PlanLimitError({ limit: "maxActiveSearches", allowed: ent.maxActiveSearches });
+    }
+
+    const cappedMaxLeads = clampByPlan(plan, input.maxLeads || 100, "maxLeadsPerSearch");
+
+    // NOTE: Credits are now charged per delivered lead, not upfront
+    // Check that user has some credits available (soft check)
+    const wallet = await prisma.aiCreditWallet.findUnique({
+      where: { userId },
+    });
+
+    if (!wallet || wallet.balance <= 0) {
+      throw new Error("Insufficient credits to start lead search. At least 1 credit required.");
+    }
+
+    const leadSearch = await prisma.leadSearch.create({
+      data: {
+        userId: userId,
+        query: input.query,
+        maxLeads: cappedMaxLeads,
+        status: "PENDING",
+        filters: input.filters || null,
+      },
+    });
+
+    logger.info(`Created LeadSearch ${leadSearch.id} for query: ${input.query}`);
+
+    // Immediately enqueue DISCOVERY job
+    await enqueueJob({
+      type: "DISCOVERY",
+      leadSearchId: leadSearch.id,
+      targetUrl: null,
+    });
+
+    logger.info(`Enqueued DISCOVERY job for LeadSearch ${leadSearch.id}`);
+
+    return leadSearch;
   }
 
-  const cappedMaxLeads = clampByPlan(plan, input.maxLeads || 100, "maxLeadsPerSearch");
+  /**
+   * Get a LeadSearch by ID with policy filtering
+   */
+  async getLeadSearchById(userId: string, id: string) {
+    // Filter results based on user permissions
+    const leadSearch = await this.filter(userId, "leadSearch", "read",
+      await prisma.leadSearch.findUnique({
+        where: { id },
+      })
+    );
+    return leadSearch;
+  }  /**
+   * Update LeadSearch status with policy checks
+   */
+  async markLeadSearchStatus(userId: string, id: string, status: "PENDING" | "RUNNING" | "DONE" | "FAILED", errorMessage?: string) {
+    // Check if user can update this lead search
+    await this.enforce(userId, "update", "leadSearch", { id, status });
 
-  // Charge campaign start credits (soft wall)
-  await requireCredits(input.userId!, 25, "LEAD_SEARCH_START");
+    await prisma.leadSearch.update({
+      where: { id },
+      data: {
+        status,
+        errorMessage: errorMessage || null,
+      },
+    });
 
-  const leadSearch = await prisma.leadSearch.create({
-    data: {
-      userId: input.userId!,
-      query: input.query,
-      maxLeads: cappedMaxLeads,
-      status: "PENDING",
-      filters: input.filters || null,
-    },
-  });
+    logger.info(`Updated LeadSearch ${id} to status: ${status}`);
+  }
+}
 
-  logger.info(`Created LeadSearch ${leadSearch.id} for query: ${input.query}`);
+// Create singleton instance for backward compatibility
+const leadSearchService = new LeadSearchService();
 
-  // Immediately enqueue DISCOVERY job
-  await enqueueJob({
-    type: "DISCOVERY",
-    leadSearchId: leadSearch.id,
-    targetUrl: null,
-  });
-
-  logger.info(`Enqueued DISCOVERY job for LeadSearch ${leadSearch.id}`);
-
-  return leadSearch;
+/**
+ * Create a new LeadSearch and immediately enqueue a DISCOVERY job
+ * @deprecated Use LeadSearchService.createLeadSearch() instead
+ */
+export async function createLeadSearch(input: CreateLeadSearchInput) {
+  return await leadSearchService.createLeadSearch(input);
 }
 
 /**
  * Get a LeadSearch by ID
+ * @deprecated Use LeadSearchService.getLeadSearchById() instead
  */
 export async function getLeadSearchById(id: string) {
   return await prisma.leadSearch.findUnique({
@@ -68,12 +131,15 @@ export async function getLeadSearchById(id: string) {
 
 /**
  * Update LeadSearch status
+ * @deprecated Use LeadSearchService.markLeadSearchStatus() instead
  */
 export async function markLeadSearchStatus(
   id: string,
   status: "PENDING" | "RUNNING" | "DONE" | "FAILED",
   errorMessage?: string
 ) {
+  // For backward compatibility, we can't enforce policies here without userId
+  // New code should use the service instance
   await prisma.leadSearch.update({
     where: { id },
     data: {

@@ -14,11 +14,10 @@ if (process.env.NODE_ENV !== "production") {
 }
 // Create adapter
 const adapter = new adapter_pg_1.PrismaPg(pool);
-exports.prisma = globalForPrisma.prisma ??
-    new client_1.PrismaClient({
-        adapter,
-        log: ["error", "warn"], // add "query" if you want to see all queries
-    });
+exports.prisma = globalForPrisma.prisma ?? new client_1.PrismaClient({
+    adapter,
+    log: ["error", "warn"], // add "query" if you want to see all queries
+});
 if (process.env.NODE_ENV !== "production") {
     globalForPrisma.prisma = exports.prisma;
 }

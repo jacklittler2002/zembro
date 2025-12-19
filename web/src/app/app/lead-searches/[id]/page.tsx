@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { FaStar } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import { SoftWallModal } from "../../../components/SoftWallModal";
-import { LeadSearchProgressBar } from "../../../components/LeadSearchProgressBar";
-  const [softWallModal, setSoftWallModal] = useState<null | { type: 'credits' | 'upgrade', message: string }>(null);
+import { SoftWallModal } from "../../../../components/SoftWallModal";
+import { LeadSearchProgressBar } from "../../../../components/LeadSearchProgressBar";
+import type { Lead } from "@/types/lead";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { supabaseBrowser } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import Link from "next/link";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
@@ -35,20 +35,6 @@ interface Feedback {
 interface LeadWithFeedback extends Lead {
   feedback?: Feedback;
 }
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  companyName: string;
-  websiteUrl: string | null;
-  city: string | null;
-  country: string | null;
-  niche: string | null;
-  industry: string | null;
-  sizeBucket: string | null;
-  role: string | null;
-  isDecisionMaker: boolean;
-  score: number | null;
-}
 
 interface LeadSearch {
   id: string;
@@ -68,6 +54,7 @@ export default function LeadSearchDetailPage({
 
   const [leadSearch, setLeadSearch] = useState<LeadSearch | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [softWallModal, setSoftWallModal] = useState<null | { type: 'credits' | 'upgrade', message: string }>(null);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
     // Fetch feedbacks for this search
@@ -76,7 +63,8 @@ export default function LeadSearchDetailPage({
         if (authLoading || !user) return;
         setFeedbackLoading(true);
         try {
-          const { data: session } = await supabaseBrowser.auth.getSession();
+          const supabase = await getSupabaseClient();
+          const { data: session } = await supabase.auth.getSession();
           const token = session.session?.access_token;
           const res = await fetch(`${API_BASE}/api/lead-searches/${id}/feedback`, {
             headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -126,7 +114,8 @@ export default function LeadSearchDetailPage({
       if (authLoading || !user) return;
 
       try {
-        const { data: session } = await supabaseBrowser.auth.getSession();
+        const supabase = await getSupabaseClient();
+        const { data: session } = await supabase.auth.getSession();
         const token = session.session?.access_token;
 
         const res = await fetch(`${API_BASE}/api/lead-searches/${id}`, {
@@ -158,7 +147,8 @@ export default function LeadSearchDetailPage({
     setError(null);
 
     try {
-      const { data: session } = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient();
+      const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
 
       const params = new URLSearchParams();
@@ -217,7 +207,8 @@ export default function LeadSearchDetailPage({
       if (authLoading || !user) return;
 
       try {
-        const { data: session } = await supabaseBrowser.auth.getSession();
+        const supabase = await getSupabaseClient();
+        const { data: session } = await supabase.auth.getSession();
         const token = session.session?.access_token;
 
         const res = await fetch(`${API_BASE}/api/lists`, {
@@ -243,7 +234,7 @@ export default function LeadSearchDetailPage({
     async function fetchCampaigns() {
       if (authLoading || !user) return;
       try {
-        const { data: session } = await supabaseBrowser.auth.getSession();
+        const supabase = await getSupabaseClient(); const { data: session } = await supabase.auth.getSession();
         const token = session.session?.access_token;
         const res = await fetch(`${API_BASE}/api/campaigns`, {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -262,7 +253,7 @@ export default function LeadSearchDetailPage({
   const router = useRouter();
   const handleDownloadCSV = async () => {
     try {
-      const { data: session } = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient(); const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
 
       const params = new URLSearchParams();
@@ -312,16 +303,6 @@ export default function LeadSearchDetailPage({
       console.error("Failed to download CSV:", error);
     }
   };
-      <SoftWallModal
-        open={!!softWallModal}
-        type={softWallModal?.type || 'upgrade'}
-        message={softWallModal?.message || ''}
-        onClose={() => setSoftWallModal(null)}
-        onBilling={() => {
-          setSoftWallModal(null);
-          router.push('/app/billing');
-        }}
-      />
 
   const toggleLeadSelection = (index: number) => {
     const newSelection = new Set(selectedLeads);
@@ -334,7 +315,7 @@ export default function LeadSearchDetailPage({
   };
 
   const selectAllLeads = () => {
-    const allIndexes = leads.map((_, index) => index);
+    const allIndexes = leads.map((_: Lead, index: number) => index);
     setSelectedLeads(new Set(allIndexes));
   };
 
@@ -349,7 +330,7 @@ export default function LeadSearchDetailPage({
     }
 
     try {
-      const { data: session } = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient(); const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
 
       let listId = selectedListId;
@@ -461,7 +442,7 @@ export default function LeadSearchDetailPage({
       return;
     }
     try {
-      const { data: session } = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient(); const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
       const filters: any = {};
       if (minScore !== undefined) filters.minScore = minScore;
@@ -493,7 +474,7 @@ export default function LeadSearchDetailPage({
   if (authLoading) {
     return (
       <div className="p-8 flex items-center justify-center">
-        <div style={{ color: "var(--color-sidebar-border)" }}>Loading...</div>
+        <div className="text-sidebar">Loading...</div>
       </div>
     );
   }
@@ -508,7 +489,7 @@ export default function LeadSearchDetailPage({
   // Handler to submit feedback
   async function submitFeedback(lead: Lead, rating: number, feedbackText: string) {
     try {
-      const { data: session } = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient(); const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
       // TODO: Use real companyId/contactId if available
       const companyId = lead.companyName;
@@ -537,6 +518,16 @@ export default function LeadSearchDetailPage({
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto space-y-6">
+        <SoftWallModal
+          open={!!softWallModal}
+          type={softWallModal?.type || 'upgrade'}
+          message={softWallModal?.message || ''}
+          onClose={() => setSoftWallModal(null)}
+          onBilling={() => {
+            setSoftWallModal(null);
+            router.push('/app/billing');
+          }}
+        />
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -546,9 +537,7 @@ export default function LeadSearchDetailPage({
             >
               ← Back to searches
             </Link>
-            <h1 className="text-2xl font-semibold" style={{ color: "var(--color-text)" }}>
-              {leadSearch?.query || "Lead Search"}
-            </h1>
+            <h1 className="text-2xl font-semibold text-ui">{leadSearch?.query || "Lead Search"}</h1>
             {leadSearch && (
               <div className="text-sm text-gray-600 mt-1 flex items-center gap-3">
                 <span>
@@ -567,11 +556,7 @@ export default function LeadSearchDetailPage({
           </div>
           <button
             onClick={handleDownloadCSV}
-            className="inline-flex items-center px-4 py-2 rounded-lg font-medium text-sm"
-            style={{
-              background: "var(--color-accent)",
-              color: "var(--color-text)",
-            }}
+            className="btn btn-primary"
           >
             Download CSV
           </button>
@@ -608,9 +593,7 @@ export default function LeadSearchDetailPage({
 
         {/* Filters */}
         <div className="rounded-lg border p-6 space-y-4 bg-white shadow-sm">
-          <h3 className="text-lg font-semibold" style={{ color: "var(--color-text)" }}>
-            Filter Leads
-          </h3>
+          <h3 className="text-lg font-semibold text-ui">Filter Leads</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                         {/* Job Title */}
@@ -786,14 +769,7 @@ export default function LeadSearchDetailPage({
           </div>
 
           <div className="flex gap-3">
-            <button
-              onClick={fetchLeads}
-              disabled={loading}
-              className="inline-flex items-center px-6 py-2.5 rounded-lg font-semibold text-sm text-white hover:opacity-90 transition-opacity disabled:opacity-50"
-              style={{ backgroundColor: "var(--color-accent)", color: "var(--color-on-accent)" }}
-            >
-              {loading ? "Loading..." : "Apply Filters"}
-            </button>
+            <button onClick={fetchLeads} disabled={loading} className="btn btn-primary">{loading ? "Loading..." : "Apply Filters"}</button>
             <button
               onClick={() => {
                 setMinScore(undefined);
@@ -821,9 +797,7 @@ export default function LeadSearchDetailPage({
         <div className="rounded-lg border bg-white shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b bg-gray-50 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h3 className="text-lg font-semibold" style={{ color: "var(--color-text)" }}>
-                Results ({leads.length} leads)
-              </h3>
+              <h3 className="text-lg font-semibold text-ui">Results ({leads.length} leads)</h3>
               {leads.length > 0 && (
                 <div className="flex gap-2">
                   <button
@@ -846,24 +820,16 @@ export default function LeadSearchDetailPage({
             <div className="flex gap-2">
               {selectedLeads.size > 0 && (
                 <>
-                  <button
-                    onClick={() => setShowAddToListModal(true)}
-                    className="px-4 py-2 text-white rounded-lg hover:opacity-90 text-sm font-semibold transition-opacity"
-                    style={{ backgroundColor: "var(--color-accent)", color: "var(--color-on-accent)" }}
-                  >
-                    Add {selectedLeads.size} to List
-                  </button>
+                  <button onClick={() => setShowAddToListModal(true)} className="btn btn-primary">Add {selectedLeads.size} to List</button>
                   <button
                     onClick={handleExportSelectedCsv}
-                    className="px-4 py-2 text-sm font-semibold rounded-lg border hover:bg-gray-50"
-                    style={{ borderColor: "var(--color-border)", color: "var(--color-sidebar-border)" }}
+                    className="btn btn-ghost"
                   >
                     Export Selected CSV
                   </button>
                   <button
                     onClick={() => setShowSendToCampaignModal(true)}
-                    className="px-4 py-2 text-sm font-semibold rounded-lg border hover:bg-gray-50"
-                    style={{ borderColor: "var(--color-border)", color: "var(--color-sidebar-border)" }}
+                    className="btn btn-ghost"
                   >
                     Send to Campaign
                   </button>
@@ -933,7 +899,7 @@ export default function LeadSearchDetailPage({
                     </td>
                   </tr>
                 ) : (
-                  leads.map((lead, idx) => {
+                  leads.map((lead: Lead, idx: number) => {
                     const fb = getFeedbackForLead(lead);
                     const [rating, setRating] = useState(fb?.rating || 0);
                     const [feedbackText, setFeedbackText] = useState(fb?.feedback || "");

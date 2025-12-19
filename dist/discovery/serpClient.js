@@ -5,10 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.serperSearch = serperSearch;
 const axios_1 = __importDefault(require("axios"));
-const logger_js_1 = require("../logger.js");
+const logger_1 = require("../logger");
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
 if (!SERPER_API_KEY) {
-    logger_js_1.logger.warn("SERPER_API_KEY is not set; real discovery search will not work.");
+    logger_1.logger.warn("SERPER_API_KEY is not set; real discovery search will not work.");
 }
 /**
  * Search Google via Serper.dev API
@@ -18,7 +18,7 @@ if (!SERPER_API_KEY) {
  */
 async function serperSearch(query, numPages = 1) {
     if (!SERPER_API_KEY) {
-        logger_js_1.logger.error("Cannot perform Serper search: API key not configured");
+        logger_1.logger.error("Cannot perform Serper search: API key not configured");
         return [];
     }
     const allResults = [];
@@ -46,13 +46,13 @@ async function serperSearch(query, numPages = 1) {
             }))
                 .filter((r) => r.url && r.url.startsWith("http"));
             allResults.push(...pageResults);
-            logger_js_1.logger.info(`Serper search page ${page}/${numPages}`, {
+            logger_1.logger.info(`Serper search page ${page}/${numPages}`, {
                 query,
                 resultsFound: pageResults.length,
             });
         }
         catch (err) {
-            logger_js_1.logger.error("Serper search error", {
+            logger_1.logger.error("Serper search error", {
                 query,
                 page,
                 error: err.message,
@@ -60,7 +60,7 @@ async function serperSearch(query, numPages = 1) {
             // Continue to next page even if one fails
         }
     }
-    logger_js_1.logger.info("Serper search completed", {
+    logger_1.logger.info("Serper search completed", {
         query,
         totalResults: allResults.length,
     });

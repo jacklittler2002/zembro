@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.runTedAgent = runTedAgent;
 const openai_1 = __importDefault(require("openai"));
-const executeTool_js_1 = require("./tools/executeTool.js");
+const executeTool_1 = require("./tools/executeTool");
 const openai = new openai_1.default({ apiKey: process.env.OPENAI_API_KEY });
 const MODEL = process.env.OPENAI_TED_MODEL || "gpt-4o-mini";
 function buildToolsForOpenAI() {
@@ -182,7 +182,7 @@ You are TED, Zembro's friendly AI assistant. You can help users do anything insi
 Talk naturally. Be helpful. Get things done.
 `;
     // We run a tool-calling loop (model -> tool -> model) per OpenAI guidance.
-    let messages = [
+    const messages = [
         { role: "system", content: system },
     ];
     if (input.conversationContext?.length) {
@@ -222,7 +222,7 @@ Talk naturally. Be helpful. Get things done.
             const toolCall = call; // OpenAI SDK types vary between versions
             const name = toolCall.function.name;
             const args = toolCall.function.arguments ? JSON.parse(toolCall.function.arguments) : {};
-            const result = await (0, executeTool_js_1.executeTedTool)({
+            const result = await (0, executeTool_1.executeTedTool)({
                 userId: input.userId,
                 name,
                 rawArgs: args,

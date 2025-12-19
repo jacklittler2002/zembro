@@ -214,4 +214,5 @@ When users ask for complex tasks, break them down:
 - "exclude duplicates" = use excludePreviousExports=true (default)
 
 Be helpful, efficient, and always optimize for quality over quantity.`;
+// force redeploy
 //# sourceMappingURL=tools.js.map

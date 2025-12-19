@@ -52,23 +52,27 @@ export const SUBSCRIPTION_PLANS = {
     monthlyCredits: 100,
     price: 0,
     priceId: null,
+    trialEligible: false,
   },
   STARTER: {
     name: "Starter",
     monthlyCredits: 3000,
     price: 49, // £49/mo
     priceId: process.env.STRIPE_PRICE_STARTER,
+    trialEligible: true,
   },
   GROWTH: {
     name: "Growth",
     monthlyCredits: 15000,
     price: 149, // £149/mo
     priceId: process.env.STRIPE_PRICE_GROWTH,
+    trialEligible: false,
   },
   SCALE: {
     name: "Scale",
     monthlyCredits: 50000,
     price: 399, // £399/mo
     priceId: process.env.STRIPE_PRICE_SCALE,
+    trialEligible: false,
   },
 };

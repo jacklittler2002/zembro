@@ -19,24 +19,17 @@ export default function BillingSuccessPage() {
   return (
     <div className="p-8">
       <div className="max-w-2xl mx-auto text-center">
-        <div className="bg-white rounded-xl p-12 shadow-sm border" style={{ borderColor: "var(--color-border)" }}>
+        <div className="bg-white rounded-xl p-12 shadow-sm border border-ui">
           <div className="text-6xl mb-6">✅</div>
-          <h1 className="text-3xl font-bold mb-4" style={{ color: "var(--color-text)" }}>
-            Payment Successful!
-          </h1>
-          <p className="text-lg mb-8" style={{ color: "var(--color-sidebar-border)" }}>
-            Your purchase was completed successfully. Your credits will be available shortly.
-          </p>
+          <h1 className="text-3xl font-bold mb-4 text-ui">Payment Successful!</h1>
+          <p className="text-lg mb-8 text-sidebar">Your purchase was completed successfully. Your credits will be available shortly.</p>
           <Link
             href="/app/billing"
-            className="inline-block px-8 py-3 rounded-lg font-semibold text-white"
-            style={{ backgroundColor: "var(--color-accent)" }}
+            className="btn btn-primary"
           >
             Go to Billing
           </Link>
-          <p className="text-sm mt-4" style={{ color: "var(--color-sidebar-border)" }}>
-            Redirecting automatically in 3 seconds...
-          </p>
+          <p className="text-sm mt-4 text-sidebar">Redirecting automatically in 3 seconds...</p>
         </div>
       </div>
     </div>

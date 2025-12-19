@@ -9,7 +9,7 @@ import {
   SocialLinks,
   AddressGuess,
 } from "./structuredExtractors.js";
-import { logger } from "../logger.js";
+import { logger } from "../logger";
 
 export interface CrawlResult {
   emails: string[];
@@ -69,7 +69,7 @@ export async function crawlDomain(
   let allEmails: string[] = [];
   let allPhones: string[] = [];
   let fullText = "";
-  let mergedSocials: SocialLinks = {};
+  const mergedSocials: SocialLinks = {};
   let addressGuess: AddressGuess = { rawText: null };
   let companyName: string | null = null;
 

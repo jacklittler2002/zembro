@@ -19,37 +19,50 @@ export async function executeTool(
 
   try {
     switch (toolName) {
-      case "create_lead_search":
+      case "create_lead_search": {
         return await handleCreateLeadSearch(userId, args);
+      }
       
-      case "get_lead_search_status":
+      case "get_lead_search_status": {
         return await handleGetLeadSearchStatus(userId, args);
+      }
       
-      case "get_leads":
+      case "get_leads": {
         return await handleGetLeads(userId, args);
+      }
       
-      case "export_leads_to_csv":
+      case "export_leads_to_csv": {
         return await handleExportLeadsToCsv(userId, args);
+      }
       
-      case "get_credit_balance":
+      case "get_credit_balance": {
         return await handleGetCreditBalance(userId);
+      }
       
-      case "estimate_credits":
+      case "estimate_credits": {
         return await handleEstimateCredits(args);
+      }
       
-      case "list_user_lead_searches":
+      case "list_user_lead_searches": {
         return await handleListUserLeadSearches(userId, args);
+      }
       
-        case "create_campaign":
-          return await handleCreateCampaign(userId, args);
-        case "import_leads_to_campaign":
-          return await handleImportLeadsToCampaign(userId, args);
-        case "update_campaign_status":
-          return await handleUpdateCampaignStatus(userId, args);
-        case "get_campaign_stats":
-          return await handleGetCampaignStats(userId, args);
-        default:
-          return JSON.stringify({ error: `Unknown tool: ${toolName}` });
+      case "create_campaign": {
+        return await handleCreateCampaign(userId, args);
+      }
+      case "import_leads_to_campaign": {
+        return await handleImportLeadsToCampaign(userId, args);
+      }
+      case "update_campaign_status": {
+        return await handleUpdateCampaignStatus(userId, args);
+      }
+      case "get_campaign_stats": {
+        return await handleGetCampaignStats(userId, args);
+      }
+      default: {
+        return JSON.stringify({ error: `Unknown tool: ${toolName}` });
+      }
+    }
 
   // --- Campaign/Outreach handlers ---
   async function handleCreateCampaign(userId: string, args: any) {
@@ -62,8 +75,8 @@ export async function executeTool(
       leadSearchId,
       listId,
       steps,
-      scheduleStartAt: scheduleStartAt ? new Date(scheduleStartAt) : undefined,
-      scheduleEndAt: scheduleEndAt ? new Date(scheduleEndAt) : undefined,
+      scheduleStartAt,
+      scheduleEndAt,
       sendTimeStart,
       sendTimeEnd,
       timezone,
@@ -92,10 +105,6 @@ export async function executeTool(
     const stats = await getCampaignStats(campaignId);
     return JSON.stringify({ success: true, campaignId, stats });
   }
-      
-      default:
-        return JSON.stringify({ error: `Unknown tool: ${toolName}` });
-    }
   } catch (error: any) {
     logger.error(`Error executing tool ${toolName}:`, error);
     return JSON.stringify({

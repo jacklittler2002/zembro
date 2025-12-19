@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { supabaseBrowser } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
 
@@ -99,7 +99,8 @@ export default function LeadsPage() {
 
   async function loadStats() {
     try {
-      const session = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient();
+      const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
 
       const res = await fetch(`${API_BASE}/api/leads/stats`, {
@@ -117,7 +118,8 @@ export default function LeadsPage() {
 
   async function loadFilterOptions() {
     try {
-      const session = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient();
+      const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
 
       const [industriesRes, countriesRes] = await Promise.all([
@@ -146,7 +148,8 @@ export default function LeadsPage() {
   async function loadLeads() {
     try {
       setLoading(true);
-      const session = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient();
+      const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
 
       const params = new URLSearchParams();
@@ -178,7 +181,8 @@ export default function LeadsPage() {
 
   async function loadLists() {
     try {
-      const session = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient();
+      const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
 
       const res = await fetch(`${API_BASE}/api/lists`, {
@@ -196,7 +200,8 @@ export default function LeadsPage() {
 
   async function toggleFavorite(leadId: string, currentStatus: boolean) {
     try {
-      const session = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient();
+      const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
 
       const res = await fetch(`${API_BASE}/api/leads/${leadId}`, {
@@ -219,7 +224,8 @@ export default function LeadsPage() {
 
   async function toggleArchive(leadId: string, currentStatus: boolean) {
     try {
-      const session = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient();
+      const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
 
       const res = await fetch(`${API_BASE}/api/leads/${leadId}`, {
@@ -247,7 +253,8 @@ export default function LeadsPage() {
     }
 
     try {
-      const session = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient();
+      const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
 
       let listId = selectedListId;
@@ -338,40 +345,40 @@ export default function LeadsPage() {
 
   if (loading && leads.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-ui p-8">
         <div className="max-w-7xl mx-auto">
-          <p className="text-gray-600">Loading leads...</p>
+          <p className="text-ui-muted">Loading leads...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-ui p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Leads</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-ui">Leads</h1>
+          <p className="text-ui-muted mt-1">
             Manage your discovered companies and contacts
           </p>
         </div>
 
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <p className="text-sm text-gray-600">Total Leads</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{stats.totalLeads}</p>
+            <div className="bg-surface rounded-lg shadow-sm p-6">
+              <p className="text-sm text-ui-muted">Total Leads</p>
+              <p className="text-3xl font-bold text-ui mt-1">{stats.totalLeads}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <p className="text-sm text-gray-600">Favorited</p>
+            <div className="bg-surface rounded-lg shadow-sm p-6">
+              <p className="text-sm text-ui-muted">Favorited</p>
               <p className="text-3xl font-bold text-yellow-600 mt-1">{stats.favoritedLeads}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <p className="text-sm text-gray-600">With Contacts</p>
+            <div className="bg-surface rounded-lg shadow-sm p-6">
+              <p className="text-sm text-ui-muted">With Contacts</p>
               <p className="text-3xl font-bold text-blue-600 mt-1">{stats.companiesWithContacts}</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <p className="text-sm text-gray-600">Avg Match Quality</p>
+            <div className="bg-surface p-6 rounded-lg shadow-sm border border-ui">
+              <p className="text-sm text-ui-muted">Avg Match Quality</p>
               <p className="text-3xl font-bold text-green-600 mt-1">
                 {stats.avgScore !== null ? `${stats.avgScore}%` : "N/A"}
               </p>
@@ -379,12 +386,12 @@ export default function LeadsPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+        <div className="bg-surface rounded-lg shadow-sm p-6">
+          <h3 className="text-lg font-semibold text-ui mb-4">Filters</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-ui mb-1">
                 Search
               </label>
               <input
@@ -395,12 +402,12 @@ export default function LeadsPage() {
                   setPage(1);
                 }}
                 placeholder="Company name or domain..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-ui rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-ui mb-1">
                 Industry
               </label>
               <select
@@ -409,7 +416,7 @@ export default function LeadsPage() {
                   setIndustryFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all text-gray-700 hover:border-gray-400"
+                className="w-full px-4 py-2.5 bg-surface border border-ui rounded-lg focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all text-ui hover:border-ui"
               >
                 <option value="">All Industries</option>
                 {industries.map((industry) => (
@@ -421,7 +428,7 @@ export default function LeadsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-ui mb-1">
                 Company Size
               </label>
               <select
@@ -430,7 +437,7 @@ export default function LeadsPage() {
                   setSizeFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all text-gray-700 hover:border-gray-400"
+                className="w-full px-4 py-2.5 bg-surface border border-ui rounded-lg focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all text-ui hover:border-ui"
               >
                 <option value="">All Sizes</option>
                 {sizeOptions.map((size) => (
@@ -442,7 +449,7 @@ export default function LeadsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-ui mb-1">
                 Country
               </label>
               <select
@@ -451,7 +458,7 @@ export default function LeadsPage() {
                   setCountryFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all text-gray-700 hover:border-gray-400"
+                className="w-full px-4 py-2.5 bg-surface border border-ui rounded-lg focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all text-ui hover:border-ui"
               >
                 <option value="">All Countries</option>
                 {countries.map((country) => (
@@ -463,7 +470,7 @@ export default function LeadsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-ui mb-2">
                 Min Match Quality
               </label>
               <input
@@ -478,12 +485,12 @@ export default function LeadsPage() {
                   setPage(1);
                 }}
                 placeholder="0-100"
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all text-gray-700 hover:border-gray-400"
+                className="w-full px-4 py-2.5 bg-surface border border-ui rounded-lg focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all text-ui hover:border-ui"
               />
             </div>
 
             <div className="flex flex-col gap-2 justify-center">
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-sm text-ui">
                 <input
                   type="checkbox"
                   checked={showFavoritesOnly}
@@ -495,7 +502,7 @@ export default function LeadsPage() {
                 />
                 Favorites Only
               </label>
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-sm text-ui">
                 <input
                   type="checkbox"
                   checked={showArchived}
@@ -522,7 +529,7 @@ export default function LeadsPage() {
                 setSearchQuery("");
                 setPage(1);
               }}
-              className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-sm border border-ui rounded-lg hover:bg-surface-muted text-ui"
             >
               Clear All Filters
             </button>
@@ -530,14 +537,14 @@ export default function LeadsPage() {
         </div>
 
         {selectedLeads.size > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
-            <p className="text-sm font-medium text-blue-900">
+          <div className="bg-secondary-soft border border-secondary rounded-lg p-4 flex items-center justify-between">
+            <p className="text-sm font-medium text-secondary">
               {selectedLeads.size} lead{selectedLeads.size === 1 ? "" : "s"} selected
             </p>
             <div className="flex gap-2">
               <button
                 onClick={deselectAllLeads}
-                className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900"
+                className="px-3 py-1.5 text-sm text-ui-muted hover:text-ui"
               >
                 Deselect All
               </button>
@@ -546,7 +553,7 @@ export default function LeadsPage() {
                   loadLists();
                   setShowAddToListModal(true);
                 }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                className="px-4 py-2 bg-secondary text-on-accent rounded-lg hover:bg-secondary/90 text-sm font-medium"
               >
                 Add to List
               </button>
@@ -554,12 +561,12 @@ export default function LeadsPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-surface rounded-lg shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-surface-muted border-b border-ui">
                 <tr>
-                  <th className="px-4 py-3 text-left">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-ui">
                     <input
                       type="checkbox"
                       checked={selectedLeads.size === leads.length && leads.length > 0}
@@ -573,31 +580,31 @@ export default function LeadsPage() {
                       className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Company</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Contacts</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Industry</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Size</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Location</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Match Quality</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-ui">Company</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-ui">Contacts</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-ui">Industry</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-ui">Size</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-ui">Location</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-ui">Match Quality</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-ui">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-ui">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={8} className="px-4 py-8 text-center text-ui-muted">
                       Loading leads...
                     </td>
                   </tr>
                 ) : leads.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={8} className="px-4 py-8 text-center text-ui-muted">
                       No leads found. Try adjusting your filters or run a lead search.
                     </td>
                   </tr>
                 ) : (
                   leads.map((lead) => (
-                    <tr key={lead.id} className="hover:bg-gray-50">
+                    <tr key={lead.id} className="hover:bg-surface-muted">
                       <td className="px-4 py-4">
                         <input
                           type="checkbox"
@@ -607,14 +614,14 @@ export default function LeadsPage() {
                         />
                       </td>
                       <td className="px-4 py-4">
-                        <div>
-                          <p className="font-medium text-gray-900">{lead.name}</p>
+                        <div className="max-w-xs">
+                          <p className="font-medium text-ui truncate">{lead.name}</p>
                           {lead.websiteUrl && (
                             <a
                               href={lead.websiteUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:underline"
+                              className="text-xs text-blue-600 hover:underline truncate block"
                             >
                               {lead.domain || lead.websiteUrl}
                             </a>
@@ -622,16 +629,16 @@ export default function LeadsPage() {
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="space-y-1">
+                        <div className="max-w-xs space-y-1">
                           {lead.contacts.slice(0, 2).map((contact) => (
                             <div key={contact.id} className="text-xs">
-                              <p className="font-medium text-gray-900">
+                              <p className="font-medium text-gray-900 truncate">
                                 {contact.firstName} {contact.lastName}
                                 {contact.isLikelyDecisionMaker && (
-                                  <span className="ml-1 text-green-600">★</span>
+                                  <span className="ml-1 text-green-600 font-bold">★</span>
                                 )}
                               </p>
-                              <p className="text-gray-500">{contact.email}</p>
+                              <p className="text-gray-500 truncate">{contact.email}</p>
                             </div>
                           ))}
                           {lead.contacts.length > 2 && (
@@ -653,28 +660,44 @@ export default function LeadsPage() {
                       </td>
                       <td className="px-4 py-4">
                         {lead.aiConfidence !== null ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {Math.round(lead.aiConfidence * 100)}%
-                          </span>
+                          <div className="flex items-center gap-3 min-w-[120px]">
+                            <div className="flex-1 bg-surface-muted rounded-full h-2 min-w-[60px]">
+                              <div
+                                className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${lead.aiConfidence * 100}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-xs font-medium text-ui whitespace-nowrap">
+                              {Math.round(lead.aiConfidence * 100)}%
+                            </span>
+                          </div>
                         ) : (
-                          "-"
+                          <span className="text-ui-muted">-</span>
                         )}
                       </td>
                       <td className="px-4 py-4">
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 flex-wrap">
                           <button
                             onClick={() => toggleFavorite(lead.id, lead.isFavorited)}
-                            className="text-xl hover:scale-110 transition-transform"
+                            className={`px-2 py-1 text-xs rounded transition-colors ${
+                              lead.isFavorited 
+                                ? 'bg-warning-soft text-warning hover:bg-warning-soft/80' 
+                                : 'bg-surface-muted text-ui-muted hover:bg-surface-muted/80'
+                            }`}
                             title={lead.isFavorited ? "Unfavorite" : "Favorite"}
                           >
-                            {lead.isFavorited ? "⭐" : "☆"}
+                            {lead.isFavorited ? "★" : "☆"}
                           </button>
                           <button
                             onClick={() => toggleArchive(lead.id, lead.isArchived)}
-                            className="text-sm text-gray-600 hover:text-gray-900"
+                            className={`px-2 py-1 text-xs rounded transition-colors ${
+                              lead.isArchived 
+                                ? 'bg-surface-muted text-ui-muted hover:bg-surface-muted/80' 
+                                : 'bg-error-soft text-error hover:bg-error-soft/80'
+                            }`}
                             title={lead.isArchived ? "Unarchive" : "Archive"}
                           >
-                            {lead.isArchived ? "📂" : "🗃️"}
+                            {lead.isArchived ? "📁" : "🗂️"}
                           </button>
                         </div>
                       </td>
@@ -686,22 +709,22 @@ export default function LeadsPage() {
           </div>
 
           {totalPages > 1 && (
-            <div className="px-4 py-4 border-t border-gray-200 flex items-center justify-between">
-              <p className="text-sm text-gray-600">
+            <div className="px-4 py-4 border-t border-ui flex items-center justify-between">
+              <p className="text-sm text-ui-muted">
                 Page {page} of {totalPages}
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setPage(page - 1)}
                   disabled={page === 1}
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 text-sm border border-ui rounded-lg hover:bg-surface-muted disabled:opacity-50 disabled:cursor-not-allowed text-ui"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setPage(page + 1)}
                   disabled={page === totalPages}
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 text-sm border border-ui rounded-lg hover:bg-surface-muted disabled:opacity-50 disabled:cursor-not-allowed text-ui"
                 >
                   Next
                 </button>

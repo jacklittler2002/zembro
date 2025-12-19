@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { supabaseAdmin } from "./supabaseAdmin";
 import { prisma } from "../db";
-import { getOrCreateBillingCustomer } from "../billing/billingService.js";
+import { getOrCreateBillingCustomer } from "../billing/billingService";
 
 export interface AuthedRequest extends Request {
   userId?: string;

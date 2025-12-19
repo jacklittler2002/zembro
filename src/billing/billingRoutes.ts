@@ -1,11 +1,10 @@
 import { Router } from "express";
-import { authMiddleware, AuthedRequest } from "../auth/authMiddleware.js";
-import { stripe } from "./stripe.js";
-import { getBillingCustomer, getActiveSubscription, getOrCreateBillingCustomer } from "./billingService.js";
-import { SUBSCRIPTION_PLANS, CREDIT_PACKS } from "./creditPricing.js";
-import { getCreditBalance } from "../ted/creditService.js";
-import { prisma } from "../db.js";
-import { getBillingStatus } from "./billingStatusService.js";
+import { authMiddleware, AuthedRequest } from "../auth/authMiddleware";
+import { stripe } from "./stripe";
+import { getBillingCustomer, getActiveSubscription, getOrCreateBillingCustomer, isTrialEligible } from "./billingService";
+import { SUBSCRIPTION_PLANS, CREDIT_PACKS } from "./creditPricing";
+import { getCreditBalance } from "../ted/creditService";
+import { getBillingStatus } from "./billingStatusService";
 
 const router = Router();
 
@@ -91,7 +90,10 @@ router.post("/api/billing/checkout/subscription", authMiddleware, async (req: Au
       return res.status(500).json({ error: "Price ID not configured for this plan" });
     }
 
-    const session = await stripe.checkout.sessions.create({
+    // Check trial eligibility
+    const trialEligible = await isTrialEligible(userId, planCode);
+
+    const sessionConfig: any = {
       mode: "subscription",
       customer: billingCustomer.stripeCustomerId,
       line_items: [
@@ -106,7 +108,16 @@ router.post("/api/billing/checkout/subscription", authMiddleware, async (req: Au
         userId,
         planCode,
       },
-    });
+    };
+
+    // Set trial period if eligible
+    if (trialEligible) {
+      sessionConfig.subscription_data = {
+        trial_period_days: 7,
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     res.json({ url: session.url });
   } catch (error) {

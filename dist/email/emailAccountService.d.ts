@@ -37,6 +37,7 @@ export declare function addEmailAccount(userId: string, config: EmailAccountConf
     updatedAt: Date;
     userId: string;
     status: import(".prisma/client").$Enums.EmailAccountStatus;
+    lastResetAt: Date;
     provider: string;
     fromName: string | null;
     smtpHost: string;
@@ -51,7 +52,6 @@ export declare function addEmailAccount(userId: string, config: EmailAccountConf
     dailySendLimit: number;
     dailySentCount: number;
     lastSentAt: Date | null;
-    lastResetAt: Date;
     warmupEnabled: boolean;
     warmupStage: number;
     warmupStartedAt: Date | null;
@@ -85,6 +85,7 @@ export declare function getUserEmailAccounts(userId: string): Promise<{
     updatedAt: Date;
     userId: string;
     status: import(".prisma/client").$Enums.EmailAccountStatus;
+    lastResetAt: Date;
     provider: string;
     fromName: string | null;
     smtpHost: string;
@@ -99,7 +100,6 @@ export declare function getUserEmailAccounts(userId: string): Promise<{
     dailySendLimit: number;
     dailySentCount: number;
     lastSentAt: Date | null;
-    lastResetAt: Date;
     warmupEnabled: boolean;
     warmupStage: number;
     warmupStartedAt: Date | null;

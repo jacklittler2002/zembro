@@ -1,5 +1,5 @@
 import { prisma } from "../db.js";
-import { logger } from "../logger.js";
+import { logger } from "../logger";
 import { enqueueJob } from "../jobs/jobService.js";
 import { normalizeDomain } from "../utils/normalizeDomain.js";
 import { discoverCandidateSites } from "./discoveryEngine.js";

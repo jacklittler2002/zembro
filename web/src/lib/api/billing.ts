@@ -14,8 +14,9 @@ export type BillingStatus = {
 };
 
 async function authedHeaders(): Promise<Record<string, string>> {
-  const { supabaseBrowser } = await import("../supabaseClient");
-  const session = await supabaseBrowser.auth.getSession();
+  const { getSupabaseClient } = await import("../supabaseClient");
+  const supabase = await getSupabaseClient();
+  const session = await supabase.auth.getSession();
   const token = session.data.session?.access_token;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }

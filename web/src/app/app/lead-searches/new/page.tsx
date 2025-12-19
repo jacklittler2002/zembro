@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { supabaseBrowser } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import { LowCreditWarning } from "@/components/LowCreditWarning";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
@@ -38,7 +38,8 @@ export default function NewLeadSearchPage() {
       if (authLoading || !user) return;
 
       try {
-        const { data: session } = await supabaseBrowser.auth.getSession();
+        const supabase = await getSupabaseClient();
+        const { data: session } = await supabase.auth.getSession();
         const token = session.session?.access_token;
 
         const res = await fetch(`${API_BASE}/api/ted/balance`, {
@@ -59,10 +60,17 @@ export default function NewLeadSearchPage() {
     fetchBalance();
   }, [authLoading, user]);
 
-  // Calculate estimated cost
+  // Calculate estimated cost based on backend logic
   useEffect(() => {
-    // Rough estimate: 10 credits per lead discovered
-    setEstimatedCost(maxLeads * 10);
+    // Backend pricing: 25 credits to start + (DISCOVERY + CRAWL + ENRICH) per lead
+    // CREDIT_COSTS: DISCOVERY: 2, CRAWL: 2, ENRICH: 1 (default values)
+    const CAMPAIGN_START_FEE = 25;
+    const DISCOVERY_COST = 2;
+    const CRAWL_COST = 2;
+    const ENRICH_COST = 1;
+    // You can import these from a shared config if desired
+    const perLead = DISCOVERY_COST + CRAWL_COST + ENRICH_COST;
+    setEstimatedCost(CAMPAIGN_START_FEE + maxLeads * perLead);
   }, [maxLeads]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,7 +79,8 @@ export default function NewLeadSearchPage() {
     setCreating(true);
 
     try {
-      const { data: session } = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient();
+      const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
 
       // Build filters object
@@ -110,7 +119,7 @@ export default function NewLeadSearchPage() {
   if (authLoading) {
     return (
       <div className="p-8 flex items-center justify-center">
-        <div style={{ color: "var(--color-sidebar-border)" }}>Loading...</div>
+        <div className="text-sidebar">Loading...</div>
       </div>
     );
   }
@@ -122,20 +131,14 @@ export default function NewLeadSearchPage() {
         {creditBalance !== null && <LowCreditWarning creditBalance={creditBalance} requiredCredits={estimatedCost} />}
 
         <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2" style={{ color: "var(--color-text)" }}>
-            Create New Lead Search
-          </h2>
-          <p style={{ color: "var(--color-sidebar-border)" }}>
-            Describe what kind of leads you're looking for and we'll find them for you.
-          </p>
+          <h2 className="text-3xl font-bold mb-2 text-ui">Create New Lead Search</h2>
+          <p className="text-sidebar">Describe what kind of leads you're looking for and we'll find them for you.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Search Query */}
           <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-semibold mb-4" style={{ color: "var(--color-text)" }}>
-              Search Query
-            </h3>
+            <h3 className="text-lg font-semibold mb-4 text-ui">Search Query</h3>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -232,10 +235,8 @@ export default function NewLeadSearchPage() {
                   Based on {maxLeads} max leads
                 </p>
               </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold" style={{ color: "var(--color-accent)" }}>
-                  {estimatedCost.toLocaleString()}
-                </div>
+                <div className="text-right">
+                <div className="text-3xl font-bold text-accent">{estimatedCost.toLocaleString()}</div>
                 <div className="text-sm text-gray-600">credits</div>
               </div>
             </div>
@@ -244,9 +245,7 @@ export default function NewLeadSearchPage() {
               <div className="mt-4 pt-4 border-t border-cyan-200">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Your balance:</span>
-                  <span className="font-semibold" style={{ color: "var(--color-text)" }}>
-                    {creditBalance.toLocaleString()} credits
-                  </span>
+                  <span className="font-semibold text-ui">{creditBalance.toLocaleString()} credits</span>
                 </div>
                 <div className="flex justify-between text-sm mt-1">
                   <span className="text-gray-600">After search:</span>
@@ -270,21 +269,8 @@ export default function NewLeadSearchPage() {
 
           {/* Action Buttons */}
           <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="px-6 py-3 rounded-lg font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={creating || !query.trim() || (creditBalance !== null && creditBalance < estimatedCost)}
-              className="flex-1 px-6 py-3 rounded-lg font-semibold text-white transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: "var(--color-accent)" }}
-            >
-              {creating ? "Creating Search..." : "Start Lead Search"}
-            </button>
+            <button type="button" onClick={() => router.back()} className="btn btn-ghost">Cancel</button>
+            <button type="submit" disabled={creating || !query.trim() || (creditBalance !== null && creditBalance < estimatedCost)} className="btn btn-primary flex-1">{creating ? "Creating Search..." : "Start Lead Search"}</button>
           </div>
         </form>
       </div>

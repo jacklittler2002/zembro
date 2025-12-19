@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -21,8 +21,10 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
+      const supabase = await getSupabaseClient();
+
       if (isForgotPassword) {
-        const { error } = await supabaseBrowser.auth.resetPasswordForEmail(
+        const { error } = await supabase.auth.resetPasswordForEmail(
           email,
           {
             redirectTo: `${window.location.origin}/auth/reset-password`,
@@ -32,14 +34,14 @@ export default function AuthPage() {
         setSuccessMessage("Password reset email sent! Check your inbox.");
         setEmail("");
       } else if (isSignUp) {
-        const { error } = await supabaseBrowser.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
         });
         if (error) throw error;
         setSuccessMessage("Sign up successful! Check your email for confirmation.");
       } else {
-        const { error } = await supabaseBrowser.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });

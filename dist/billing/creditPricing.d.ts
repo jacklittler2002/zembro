@@ -48,24 +48,28 @@ export declare const SUBSCRIPTION_PLANS: {
         monthlyCredits: number;
         price: number;
         priceId: null;
+        trialEligible: boolean;
     };
     STARTER: {
         name: string;
         monthlyCredits: number;
         price: number;
         priceId: string | undefined;
+        trialEligible: boolean;
     };
     GROWTH: {
         name: string;
         monthlyCredits: number;
         price: number;
         priceId: string | undefined;
+        trialEligible: boolean;
     };
     SCALE: {
         name: string;
         monthlyCredits: number;
         price: number;
         priceId: string | undefined;
+        trialEligible: boolean;
     };
 };
 //# sourceMappingURL=creditPricing.d.ts.map

@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.runDiscoveryForLeadSearch = runDiscoveryForLeadSearch;
 const db_js_1 = require("../db.js");
-const logger_js_1 = require("../logger.js");
+const logger_1 = require("../logger");
 const jobService_js_1 = require("../jobs/jobService.js");
 const normalizeDomain_js_1 = require("../utils/normalizeDomain.js");
 const discoveryEngine_js_1 = require("./discoveryEngine.js");
@@ -11,7 +11,7 @@ const discoveryEngine_js_1 = require("./discoveryEngine.js");
  * Kept for fallback if SERPER_API_KEY is not configured.
  */
 async function mockSearchWeb(query) {
-    logger_js_1.logger.warn(`Using MOCK discovery (SERPER_API_KEY not configured) for query: ${query}`);
+    logger_1.logger.warn(`Using MOCK discovery (SERPER_API_KEY not configured) for query: ${query}`);
     // Fallback mock results
     return [
         "https://example-dentist-1.co.uk",
@@ -37,12 +37,12 @@ async function runDiscoveryForLeadSearch(leadSearchId) {
         where: { id: leadSearchId },
     });
     if (!leadSearch) {
-        logger_js_1.logger.warn("Discovery called with invalid LeadSearchId", { leadSearchId });
+        logger_1.logger.warn("Discovery called with invalid LeadSearchId", { leadSearchId });
         return;
     }
     const query = leadSearch.query;
     const maxLeads = leadSearch.maxLeads ?? 100;
-    logger_js_1.logger.info("Starting discovery for LeadSearch", {
+    logger_1.logger.info("Starting discovery for LeadSearch", {
         leadSearchId,
         query,
         maxLeads,
@@ -57,7 +57,7 @@ async function runDiscoveryForLeadSearch(leadSearchId) {
     }
     else {
         // Fallback to mock if no API key
-        logger_js_1.logger.warn("SERPER_API_KEY not set, using mock discovery");
+        logger_1.logger.warn("SERPER_API_KEY not set, using mock discovery");
         const mockUrls = await mockSearchWeb(query);
         sites = mockUrls.map(url => ({
             url,
@@ -66,7 +66,7 @@ async function runDiscoveryForLeadSearch(leadSearchId) {
             snippet: undefined,
         }));
     }
-    logger_js_1.logger.info("Discovery found candidate sites", {
+    logger_1.logger.info("Discovery found candidate sites", {
         leadSearchId,
         query,
         siteCount: sites.length,
@@ -81,7 +81,7 @@ async function runDiscoveryForLeadSearch(leadSearchId) {
         let company;
         if (existing) {
             company = existing;
-            logger_js_1.logger.info("Company already exists", { domain: site.domain });
+            logger_1.logger.info("Company already exists", { domain: site.domain });
         }
         else {
             company = await db_js_1.prisma.company.create({
@@ -96,7 +96,7 @@ async function runDiscoveryForLeadSearch(leadSearchId) {
                 },
             });
             companiesCreated++;
-            logger_js_1.logger.info("Created company from discovery", {
+            logger_1.logger.info("Created company from discovery", {
                 domain: site.domain,
                 title: site.title,
                 leadSearchId,
@@ -120,7 +120,14 @@ async function runDiscoveryForLeadSearch(leadSearchId) {
         });
         jobsEnqueued++;
     }
-    logger_js_1.logger.info("Discovery pipeline completed for LeadSearch", {
+    // Increment discoveredCount on LeadSearch
+    if (companiesCreated > 0) {
+        await db_js_1.prisma.leadSearch.update({
+            where: { id: leadSearchId },
+            data: { discoveredCount: { increment: companiesCreated } },
+        });
+    }
+    logger_1.logger.info("Discovery pipeline completed for LeadSearch", {
         leadSearchId,
         query,
         companiesCreated,

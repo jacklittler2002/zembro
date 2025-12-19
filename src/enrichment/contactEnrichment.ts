@@ -1,4 +1,4 @@
-import { Contact, Company } from "@prisma/client";
+import { Company } from "@prisma/client";
 import { prisma } from "../db";
 import { logger } from "../logger";
 
@@ -98,11 +98,11 @@ export async function enrichContactsForCompany(company: Company) {
 
   for (const contact of contacts) {
     // Only guess names if not already set
-    let { firstName, lastName } = contact.firstName
+    const { firstName, lastName } = contact.firstName
       ? { firstName: contact.firstName, lastName: contact.lastName }
       : guessNameFromEmail(contact.email);
 
-    let role: string | null = contact.role ?? null;
+    const role: string | null = contact.role ?? null;
 
     // TODO: Future enhancement - use AI to infer role from:
     // - company.rawContent (look for team/about pages mentioning the email/name)

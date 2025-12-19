@@ -1,6 +1,6 @@
 import { serperSearch } from "./serpClient.js";
 import { normalizeDomainFromUrl, isLikelyBusinessDomain } from "../utils/domainUtils.js";
-import { logger } from "../logger.js";
+import { logger } from "../logger";
 import { buildDiscoveryQueries } from "./queryVariants.js";
 
 export interface DiscoveredSite {
@@ -47,7 +47,7 @@ export async function discoverCandidateSites(
     maxResults,
   });
 
-  let all: DiscoveredSite[] = [];
+  const all: DiscoveredSite[] = [];
 
   // 1. Serper (Google/Bing)
   for (const q of queries) {

@@ -1,11 +1,14 @@
 import { Router } from "express";
 import { prisma } from "../db";
 import { maybeMarkLeadSearchDone } from "../leadSearch/leadSearchProgressService";
+import { PolicyMiddleware } from "../policies/policyMiddleware";
 
 const router = Router();
 
 // GET /api/lead-searches/:id/progress
-router.get("/lead-searches/:id/progress", async (req, res) => {
+router.get("/lead-searches/:id/progress", 
+  PolicyMiddleware.check("leadSearch", "read"),
+  async (req, res) => {
   const { id } = req.params;
   const leadSearch = await prisma.leadSearch.findUnique({
     where: { id },

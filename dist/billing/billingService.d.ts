@@ -30,6 +30,9 @@ export declare function getActiveSubscription(userId: string): Promise<{
     stripeSubscriptionId: string;
     planCode: string;
     currentPeriodEnd: Date;
+    hasUsedTrial: boolean;
+    trialEnd: Date | null;
+    trialStart: Date | null;
 } | null>;
 /**
  * Create a Stripe checkout URL for subscription upgrade
@@ -39,4 +42,8 @@ export declare function createSubscriptionCheckoutUrl(userId: string, planCode: 
  * Create a Stripe checkout URL for credit pack purchase
  */
 export declare function createCreditPackCheckoutUrl(userId: string, packCode: "5K" | "20K"): Promise<string>;
+/**
+ * Check if a user is eligible for a trial on a specific plan
+ */
+export declare function isTrialEligible(userId: string, planCode: string): Promise<boolean>;
 //# sourceMappingURL=billingService.d.ts.map

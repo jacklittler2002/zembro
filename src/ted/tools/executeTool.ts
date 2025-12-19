@@ -1,6 +1,5 @@
-import { prisma } from "../../db";
 import { TedToolName, getToolSchema } from "./tedTools";
-import { requireCredits, clampByPlan, getEntitlements, PlanLimitError, InsufficientCreditsError } from "../../monetization/enforce";
+import { requireCredits, clampByPlan, getEntitlements } from "../../monetization/enforce";
 import { createLeadSearch, getLeadSearchById, getLeadSearchLeads } from "../../leadSearch/leadSearchService";
 import { exportLeadSearchToCsv } from "../../export/leadSearchExportService";
 import { createLeadList, listLeadLists, addLeadsFromLeadSearch } from "../../lists/leadListService";
@@ -31,16 +30,6 @@ export async function executeTedTool(args: {
   }
 
   const input = parsed.data as any;
-
-  // Helpers
-  async function softCreditCheck(required: number) {
-    const balance = await getCreditBalance(userId);
-    return {
-      required,
-      available: balance,
-      ok: balance >= required,
-    };
-  }
 
   switch (name) {
     case "check_credits": {

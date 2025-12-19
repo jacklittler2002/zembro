@@ -32,6 +32,7 @@ export declare function createCampaign(input: CreateCampaignInput): Promise<{
             updatedAt: Date;
             userId: string;
             status: import(".prisma/client").$Enums.EmailAccountStatus;
+            lastResetAt: Date;
             provider: string;
             fromName: string | null;
             smtpHost: string;
@@ -46,7 +47,6 @@ export declare function createCampaign(input: CreateCampaignInput): Promise<{
             dailySendLimit: number;
             dailySentCount: number;
             lastSentAt: Date | null;
-            lastResetAt: Date;
             warmupEnabled: boolean;
             warmupStage: number;
             warmupStartedAt: Date | null;
@@ -60,9 +60,9 @@ export declare function createCampaign(input: CreateCampaignInput): Promise<{
         };
     } & {
         id: string;
-        addedAt: Date;
         campaignId: string;
         emailAccountId: string;
+        addedAt: Date;
     })[];
     steps: {
         id: string;
@@ -83,10 +83,8 @@ export declare function createCampaign(input: CreateCampaignInput): Promise<{
     createdAt: Date;
     updatedAt: Date;
     userId: string;
-    status: import(".prisma/client").$Enums.CampaignStatus;
     leadSearchId: string | null;
-    lastResetAt: Date;
-    listId: string | null;
+    status: import(".prisma/client").$Enums.CampaignStatus;
     scheduleStartAt: Date | null;
     scheduleEndAt: Date | null;
     sendTimeStart: string | null;
@@ -96,12 +94,14 @@ export declare function createCampaign(input: CreateCampaignInput): Promise<{
     totalLeads: number;
     emailsQueued: number;
     emailsSent: number;
-    emailsSentToday: number;
     emailsOpened: number;
     emailsReplied: number;
     emailsBounced: number;
     emailsFailed: number;
+    emailsSentToday: number;
     emailsUnsubscribed: number;
+    lastResetAt: Date;
+    listId: string | null;
 }>;
 /**
  * Get campaign by ID with full details
@@ -113,12 +113,20 @@ export declare function getCampaignById(campaignId: string, userId: string): Pro
         createdAt: Date;
         updatedAt: Date;
         userId: string;
+        status: import(".prisma/client").$Enums.LeadSearchStatus;
         niche: string | null;
         location: string | null;
         maxLeads: number;
-        status: import(".prisma/client").$Enums.LeadSearchStatus;
         errorMessage: string | null;
         filters: import("@prisma/client/runtime/client").JsonValue | null;
+        contactsFoundCount: number;
+        crawledCount: number;
+        discoveredCount: number;
+        enrichedCount: number;
+        creditsCharged: number;
+        totalFound: number;
+        totalDeduped: number;
+        totalNetNew: number;
     } | null;
     emailAccounts: ({
         emailAccount: {
@@ -128,6 +136,7 @@ export declare function getCampaignById(campaignId: string, userId: string): Pro
             updatedAt: Date;
             userId: string;
             status: import(".prisma/client").$Enums.EmailAccountStatus;
+            lastResetAt: Date;
             provider: string;
             fromName: string | null;
             smtpHost: string;
@@ -142,7 +151,6 @@ export declare function getCampaignById(campaignId: string, userId: string): Pro
             dailySendLimit: number;
             dailySentCount: number;
             lastSentAt: Date | null;
-            lastResetAt: Date;
             warmupEnabled: boolean;
             warmupStage: number;
             warmupStartedAt: Date | null;
@@ -156,9 +164,9 @@ export declare function getCampaignById(campaignId: string, userId: string): Pro
         };
     } & {
         id: string;
-        addedAt: Date;
         campaignId: string;
         emailAccountId: string;
+        addedAt: Date;
     })[];
     steps: {
         id: string;
@@ -179,10 +187,8 @@ export declare function getCampaignById(campaignId: string, userId: string): Pro
     createdAt: Date;
     updatedAt: Date;
     userId: string;
-    status: import(".prisma/client").$Enums.CampaignStatus;
     leadSearchId: string | null;
-    lastResetAt: Date;
-    listId: string | null;
+    status: import(".prisma/client").$Enums.CampaignStatus;
     scheduleStartAt: Date | null;
     scheduleEndAt: Date | null;
     sendTimeStart: string | null;
@@ -192,12 +198,14 @@ export declare function getCampaignById(campaignId: string, userId: string): Pro
     totalLeads: number;
     emailsQueued: number;
     emailsSent: number;
-    emailsSentToday: number;
     emailsOpened: number;
     emailsReplied: number;
     emailsBounced: number;
     emailsFailed: number;
+    emailsSentToday: number;
     emailsUnsubscribed: number;
+    lastResetAt: Date;
+    listId: string | null;
 }>;
 /**
  * List all campaigns for a user
@@ -215,6 +223,7 @@ export declare function listUserCampaigns(userId: string): Promise<({
             updatedAt: Date;
             userId: string;
             status: import(".prisma/client").$Enums.EmailAccountStatus;
+            lastResetAt: Date;
             provider: string;
             fromName: string | null;
             smtpHost: string;
@@ -229,7 +238,6 @@ export declare function listUserCampaigns(userId: string): Promise<({
             dailySendLimit: number;
             dailySentCount: number;
             lastSentAt: Date | null;
-            lastResetAt: Date;
             warmupEnabled: boolean;
             warmupStage: number;
             warmupStartedAt: Date | null;
@@ -243,9 +251,9 @@ export declare function listUserCampaigns(userId: string): Promise<({
         };
     } & {
         id: string;
-        addedAt: Date;
         campaignId: string;
         emailAccountId: string;
+        addedAt: Date;
     })[];
     steps: {
         id: string;
@@ -266,10 +274,8 @@ export declare function listUserCampaigns(userId: string): Promise<({
     createdAt: Date;
     updatedAt: Date;
     userId: string;
-    status: import(".prisma/client").$Enums.CampaignStatus;
     leadSearchId: string | null;
-    lastResetAt: Date;
-    listId: string | null;
+    status: import(".prisma/client").$Enums.CampaignStatus;
     scheduleStartAt: Date | null;
     scheduleEndAt: Date | null;
     sendTimeStart: string | null;
@@ -279,12 +285,14 @@ export declare function listUserCampaigns(userId: string): Promise<({
     totalLeads: number;
     emailsQueued: number;
     emailsSent: number;
-    emailsSentToday: number;
     emailsOpened: number;
     emailsReplied: number;
     emailsBounced: number;
     emailsFailed: number;
+    emailsSentToday: number;
     emailsUnsubscribed: number;
+    lastResetAt: Date;
+    listId: string | null;
 })[]>;
 /**
  * Update campaign status

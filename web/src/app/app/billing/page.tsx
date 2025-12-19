@@ -11,7 +11,7 @@ import {
   BillingStatus,
 } from "@/lib/api/billing";
 
-import { PLAN_ENTITLEMENTS, PlanCode } from "../../monetization/planEntitlements";
+import { PLAN_ENTITLEMENTS, PlanCode } from "@/monetization/planEntitlements";
 
 
 const LIMIT_LABELS: Record<string, string> = {
@@ -101,19 +101,19 @@ export default function BillingPage() {
   if (loading) {
     return (
       <div className="p-8 flex items-center justify-center">
-        <div style={{ color: "var(--color-sidebar-border)" }}>Loading billing status...</div>
+        <div className="text-sidebar">Loading billing status...</div>
       </div>
     );
   }
 
   return (
-    <div className="p-8" style={{ backgroundColor: "var(--color-bg)", color: "var(--color-text)" }}>
+    <div className="p-8 bg-ui text-ui">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--color-text)" }}>
+          <h1 className="text-3xl font-bold mb-2 text-ui">
             Billing & Credits
           </h1>
-          <p className="text-lg" style={{ color: "var(--color-sidebar-border)" }}>
+          <p className="text-lg text-sidebar">
             Manage your subscription, top up credits, and view plan limits.
           </p>
         </div>
@@ -124,29 +124,29 @@ export default function BillingPage() {
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 text-sm mb-6">{error}</div>
         )}
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border mb-8" style={{ borderColor: "var(--color-border)" }}>
+        <div className="bg-surface rounded-xl p-6 shadow-sm border mb-8 border-ui">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <div className="text-sm" style={{ color: "var(--color-sidebar-border)" }}>
+              <div className="text-sm text-sidebar">
                 Current Plan
               </div>
-              <div className="text-2xl font-bold" style={{ color: "var(--color-text)" }}>
-                {currentPlanData.name}
+              <div className="text-2xl font-bold text-ui">
+                {currentPlanData.label}
               </div>
-              <div className="text-sm mt-1" style={{ color: "var(--color-sidebar-border)" }}>
-                {currentPlanData.monthlyCredits.toLocaleString()} monthly credits • {PLAN_LIMITS[currentPlan].maxLeadSearchActive} active lead searches
+              <div className="text-sm mt-1 text-sidebar">
+                {currentPlanData.monthlyCredits.toLocaleString()} monthly credits • {PLAN_ENTITLEMENTS[currentPlan].maxActiveSearches} active lead searches
               </div>
               {billing?.currentPeriodEnd && (
-                <div className="text-sm" style={{ color: "var(--color-sidebar-border)" }}>
+                <div className="text-sm text-sidebar">
                   Renews: {new Date(billing.currentPeriodEnd).toLocaleDateString()}
                 </div>
               )}
             </div>
             <div className="text-right">
-              <div className="text-sm" style={{ color: "var(--color-sidebar-border)" }}>
+              <div className="text-sm text-sidebar">
                 Credits Balance
               </div>
-              <div className="text-4xl font-bold" style={{ color: "var(--color-accent)" }}>
+              <div className="text-4xl font-bold text-accent">
                 {creditBalance.toLocaleString()}
               </div>
             </div>
@@ -154,42 +154,40 @@ export default function BillingPage() {
         </div>
 
         <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6" style={{ color: "var(--color-text)" }}>
+          <h2 className="text-2xl font-bold mb-6 text-ui">
             Subscription Plans
           </h2>
           <div className="grid md:grid-cols-4 gap-6">
             {Object.entries(PLAN_ENTITLEMENTS).map(([code, plan]) => (
-              <div
+                <div
                 key={code}
-                className={`bg-white rounded-xl p-6 shadow-sm border ${currentPlan === code ? "ring-2 ring-cyan-500" : ""}`}
-                style={{ borderColor: currentPlan === code ? "var(--color-accent)" : "var(--color-border)" }}
+                className={`bg-surface rounded-xl p-6 shadow-sm border ${currentPlan === code ? "ring-2 ring-cyan-500" : ""} ${currentPlan === code ? 'border-accent' : 'border-ui'}`}
               >
                 {currentPlan === code && (
-                  <div
-                    className="text-xs font-semibold px-3 py-1 rounded-full mb-4 inline-block"
-                    style={{ backgroundColor: "var(--color-accent-soft)", color: "var(--color-accent)" }}
+                    <div
+                    className="text-xs font-semibold px-3 py-1 rounded-full mb-4 inline-block bg-accent-soft text-accent"
                   >
                     Current Plan
                   </div>
                 )}
-                <h3 className="text-xl font-bold mb-2" style={{ color: "var(--color-text)" }}>
+                <h3 className="text-xl font-bold mb-2 text-ui">
                   {plan.label}
                 </h3>
-                <div className="mb-2 text-sm" style={{ color: "var(--color-sidebar-border)" }}>
+                <div className="mb-2 text-sm text-sidebar">
                   Includes {plan.monthlyCredits.toLocaleString()} credits/mo
                 </div>
                 {/* Price: You may want to fetch this from backend or config if needed */}
                 <div className="mb-4">
-                  <span className="text-3xl font-bold" style={{ color: "var(--color-text)" }}>
+                  <span className="text-3xl font-bold text-ui">
                     {/* £{plan.price} */}
                   </span>
-                  <span style={{ color: "var(--color-sidebar-border)" }}>/mo</span>
+                  <span className="text-sidebar">/mo</span>
                 </div>
-                <div className="mb-4 space-y-2 text-sm" style={{ color: "var(--color-sidebar-border)" }}>
+                <div className="mb-4 space-y-2 text-sm text-sidebar">
                   {Object.keys(LIMIT_LABELS).map((key) => (
                     <div key={key} className="flex items-start justify-between gap-2">
                       <span>{LIMIT_LABELS[key]}</span>
-                      <span className="font-semibold" style={{ color: "var(--color-text)" }}>
+                      <span className="font-semibold text-ui">
                         {plan[key as keyof typeof plan]?.toLocaleString?.() ?? "-"}
                       </span>
                     </div>
@@ -200,24 +198,21 @@ export default function BillingPage() {
                   <button
                     onClick={() => handleSubscriptionCheckout(code as PlanCode)}
                     disabled={checkoutLoading === `sub-${code}`}
-                    className="w-full py-3 rounded-lg font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                    style={{ backgroundColor: "var(--color-accent)" }}
+                    className="btn btn-primary w-full"
                   >
                     {checkoutLoading === `sub-${code}` ? "Loading..." : "Upgrade"}
                   </button>
                 )}
                 {currentPlan === code && code !== "FREE" && (
                   <button
-                    className="w-full py-3 rounded-lg font-semibold border"
-                    style={{ borderColor: "var(--color-border)", color: "var(--color-sidebar-border)" }}
+                    className="btn btn-ghost w-full"
                   >
                     Manage Subscription
                   </button>
                 )}
                 {code === "FREE" && currentPlan === "FREE" && (
                   <button
-                    className="w-full py-3 rounded-lg font-semibold border"
-                    style={{ borderColor: "var(--color-border)", color: "var(--color-sidebar-border)" }}
+                    className="btn btn-ghost w-full"
                     disabled
                   >
                     You are on Free
@@ -229,35 +224,33 @@ export default function BillingPage() {
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--color-text)" }}>
+          <h2 className="text-2xl font-bold mb-2 text-ui">
             Buy Credit Packs
           </h2>
-          <p className="mb-6" style={{ color: "var(--color-sidebar-border)" }}>
+          <p className="mb-6 text-sidebar">
             Need more credits? Purchase one-time credit packs that never expire.
           </p>
           <div className="grid md:grid-cols-3 gap-6">
-            {CREDIT_PACKS.map((pack) => (
+                {CREDIT_PACKS.map((pack) => (
               <div
                 key={pack.code}
-                className="bg-white rounded-xl p-6 shadow-sm border"
-                style={{ borderColor: "var(--color-border)" }}
+                className="bg-surface rounded-xl p-6 shadow-sm border border-ui"
               >
-                <h3 className="text-xl font-bold mb-2" style={{ color: "var(--color-text)" }}>
+                <h3 className="text-xl font-bold mb-2 text-ui">
                   {pack.label}
                 </h3>
                 <div className="mb-4">
-                  <span className="text-3xl font-bold" style={{ color: "var(--color-text)" }}>
+                  <span className="text-3xl font-bold text-ui">
                     £{pack.price}
                   </span>
                 </div>
-                <div className="mb-6 text-sm" style={{ color: "var(--color-sidebar-border)" }}>
+                <div className="mb-6 text-sm text-sidebar">
                   One-time purchase • Never expires
                 </div>
                 <button
                   onClick={() => handleCreditPackCheckout(pack.code)}
                   disabled={checkoutLoading === `pack-${pack.code}`}
-                  className="w-full py-3 rounded-lg font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                  style={{ backgroundColor: "var(--color-secondary)" }}
+                  className="btn btn-secondary w-full"
                 >
                   {checkoutLoading === `pack-${pack.code}` ? "Loading..." : "Buy Now"}
                 </button>

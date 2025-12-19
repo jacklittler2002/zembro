@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { supabaseBrowser } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import { LowCreditWarning } from "@/components/LowCreditWarning";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
@@ -19,7 +19,8 @@ export default function LeadSearchesPage() {
       if (authLoading || !user) return;
 
       try {
-        const { data: session } = await supabaseBrowser.auth.getSession();
+        const supabase = await getSupabaseClient();
+        const { data: session } = await supabase.auth.getSession();
         const token = session.session?.access_token;
 
         const res = await fetch(`${API_BASE}/api/lead-searches`, {
@@ -56,7 +57,8 @@ export default function LeadSearchesPage() {
 
   const handleDownloadCSV = async (searchId: string) => {
     try {
-      const { data: session } = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient();
+      const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
 
       const res = await fetch(`${API_BASE}/api/lead-searches/${searchId}/export`, {
@@ -84,7 +86,7 @@ export default function LeadSearchesPage() {
   if (authLoading || loading) {
     return (
       <div className="p-8 flex items-center justify-center">
-        <div style={{ color: "var(--color-sidebar-border)" }}>Loading...</div>
+            <div className="text-sidebar">Loading...</div>
       </div>
     );
   }
@@ -95,45 +97,31 @@ export default function LeadSearchesPage() {
         {/* Low credit warning */}
         {creditBalance !== null && <LowCreditWarning creditBalance={creditBalance} />}
         
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-semibold" style={{ color: "var(--color-text)" }}>
-            Your Lead Searches
-          </h2>
-          <Link 
-            href="/app/lead-searches/new"
-            className="px-6 py-2 rounded-lg font-semibold text-white"
-            style={{ backgroundColor: "var(--color-accent)" }}
-          >
-            Create New Search
-          </Link>
+          <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-semibold text-ui">Lead Searches</h2>
+          <Link href="/app/lead-searches/new" className="btn btn-primary">Create New Search</Link>
         </div>
 
         {leadSearches.length === 0 ? (
-          <div className="bg-white border rounded-lg p-12 text-center" style={{ borderColor: "var(--color-border)" }}>
-            <p className="text-lg mb-4" style={{ color: "var(--color-sidebar-border)" }}>No lead searches yet</p>
-            <Link 
-              href="/app/lead-searches/new"
-              className="hover:underline"
-              style={{ color: "var(--color-accent)" }}
-            >
-              Create your first search →
-            </Link>
+          <div className="bg-white border rounded-lg p-12 text-center border-ui">
+              <p className="text-lg mb-4 text-ui">No lead searches yet</p>
+            <Link href="/app/lead-searches/new" className="hover:underline text-accent">Create your first search →</Link>
           </div>
         ) : (
-          <div className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: "var(--color-border)" }}>
+          <div className="bg-white border rounded-lg overflow-hidden border-ui">
             <table className="w-full">
-              <thead style={{ backgroundColor: "var(--color-hero)" }}>
+              <thead className="bg-hero">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: "var(--color-sidebar-border)" }}>Query</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: "var(--color-sidebar-border)" }}>Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: "var(--color-sidebar-border)" }}>Created</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase" style={{ color: "var(--color-sidebar-border)" }}>Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-ui">Query</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-ui">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase text-ui">Created</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium uppercase text-ui">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y" style={{ borderColor: "var(--color-border)" }}>
                 {leadSearches.map((search: any) => (
                   <tr key={search.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4" style={{ color: "var(--color-text)" }}>{search.query}</td>
+                      <td className="px-6 py-4 text-ui">{search.query}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded text-xs font-semibold ${
                         search.status === "DONE" ? "bg-green-500/20 text-green-400" :
@@ -144,24 +132,12 @@ export default function LeadSearchesPage() {
                         {search.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4" style={{ color: "var(--color-sidebar-border)" }}>
+                      <td className="px-6 py-4 text-ui">
                       {new Date(search.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
-                      <Link 
-                        href={`/app/lead-searches/${search.id}`}
-                        className="hover:underline text-sm"
-                        style={{ color: "var(--color-accent)" }}
-                      >
-                        View
-                      </Link>
-                      <button
-                        onClick={() => handleDownloadCSV(search.id)}
-                        className="hover:underline text-sm"
-                        style={{ color: "var(--color-secondary)" }}
-                      >
-                        Download CSV
-                      </button>
+                      <Link href={`/app/lead-searches/${search.id}`} className="hover:underline text-sm text-accent">View</Link>
+                      <button onClick={() => handleDownloadCSV(search.id)} className="hover:underline text-sm text-secondary">Download CSV</button>
                     </td>
                   </tr>
                 ))}

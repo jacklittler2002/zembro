@@ -1,5 +1,4 @@
 import { PLAN_ENTITLEMENTS, PlanCode } from "./entitlements";
-import { CREDIT_PRICING } from "./pricing";
 import { getCreditBalance, consumeCredits } from "../ted/creditService";
 
 export class PlanLimitError extends Error {

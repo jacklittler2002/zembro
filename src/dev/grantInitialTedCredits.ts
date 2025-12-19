@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { logger } from "../logger.js";
+import { logger } from "../logger";
 import { addCredits } from "../ted/creditService.js";
 
 const TEST_USER_ID = "test-user-123";

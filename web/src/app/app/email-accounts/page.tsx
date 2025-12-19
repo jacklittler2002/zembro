@@ -227,18 +227,13 @@ export default function EmailAccountsPage() {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--color-text)" }}>
-            Email Accounts
-          </h1>
-          <p className="text-gray-600">
-            Connect your own accounts (free) or purchase pre-warmed accounts
-          </p>
+          <h1 className="text-3xl font-bold mb-2 text-ui">Email Accounts</h1>
+          <p className="text-ui">Connect your own accounts (free) or purchase pre-warmed accounts</p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 text-white rounded hover:opacity-90"
-            style={{ background: "var(--color-accent)", color: "var(--color-on-accent)" }}
+            className="btn btn-primary"
           >
             + Connect Account
           </button>
@@ -246,22 +241,19 @@ export default function EmailAccountsPage() {
             onClick={handlePurchaseAccounts}
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
           >
-            💳 Buy Accounts
+            Buy Accounts
           </button>
         </div>
       </div>
 
-      {accounts.length === 0 ? (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
-          <div className="text-6xl mb-4">📮</div>
-          <p className="text-gray-600 mb-4">No email accounts connected yet</p>
-          <p className="text-sm text-gray-500 mb-6">
-            Connect your own account (free) or purchase pre-warmed accounts ($8/account)
-          </p>
+      {/* Conditional rendering based on accounts */}
+      {!accounts || accounts.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="mb-4 text-ui">No email accounts connected yet</p>
+          <p className="text-sm mb-6 text-ui">Connect your own account (free) or purchase pre-warmed accounts ($8/account)</p>
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-6 py-3 rounded-lg font-medium"
-            style={{ background: "var(--color-strong)", color: "var(--color-on-strong)" }}
+            className="px-6 py-3 rounded-lg font-medium bg-strong text-on-strong"
           >
             Connect First Account
           </button>
@@ -271,21 +263,11 @@ export default function EmailAccountsPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Daily Usage
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Health
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-accent">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-accent">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-accent">Daily Usage</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-accent">Health</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-accent">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -293,11 +275,8 @@ export default function EmailAccountsPage() {
                 <tr key={account.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {account.email}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {account.fromName || "No display name"}
+                      <div className="text-sm font-medium text-ui">{account.email}</div>
+                      <div className="text-sm text-ui">{account.fromName || "No display name"}
                         {account.isInstantlyAccount && (
                           <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                             Instantly
@@ -319,14 +298,14 @@ export default function EmailAccountsPage() {
                       {account.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-accent">
                     {account.dailySentCount} / {account.dailySendLimit}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-accent">
                     <div className="flex gap-3">
-                      <span title="Bounce Rate">📉 {account.bounceRate.toFixed(1)}%</span>
-                      <span title="Reply Rate">💬 {account.replyRate.toFixed(1)}%</span>
-                      <span title="Open Rate">📧 {account.openRate.toFixed(1)}%</span>
+                      <span title="Bounce Rate">{account.bounceRate.toFixed(1)}%</span>
+                      <span title="Reply Rate">{account.replyRate.toFixed(1)}%</span>
+                      <span title="Open Rate">{account.openRate.toFixed(1)}%</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

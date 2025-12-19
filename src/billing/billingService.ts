@@ -1,6 +1,6 @@
 import { prisma } from "../db";
 import { stripe } from "./stripe";
-import { logger } from "../logger.js";
+import { logger } from "../logger";
 
 /**
  * Get or create a Stripe customer and BillingCustomer record for a user
@@ -153,4 +153,37 @@ export async function createCreditPackCheckoutUrl(
   });
 
   return session.url!;
+}
+
+/**
+ * Check if a user is eligible for a trial on a specific plan
+ */
+export async function isTrialEligible(userId: string, planCode: string): Promise<boolean> {
+  // Only STARTER plan is trial eligible
+  if (planCode !== "STARTER") {
+    return false;
+  }
+
+  // Check if user has ever used a trial
+  const previousTrial = await prisma.subscription.findFirst({
+    where: {
+      userId,
+      hasUsedTrial: true,
+    },
+  });
+
+  if (previousTrial) {
+    return false;
+  }
+
+  // Check if user has any active or past paid subscription
+  const paidSubscription = await prisma.subscription.findFirst({
+    where: {
+      userId,
+      status: { in: ["active", "past_due", "canceled"] },
+      planCode: { not: "FREE" }, // FREE is not considered paid
+    },
+  });
+
+  return !paidSubscription;
 }

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { logger } from "../logger.js";
+import { logger } from "../logger";
 
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
 

@@ -1,6 +1,5 @@
 import { prisma } from "../db.js";
 import { addCredits } from "../ted/creditService.js";
-import { logger } from "../logger.js";
 
 async function grantDevCredits() {
   try {

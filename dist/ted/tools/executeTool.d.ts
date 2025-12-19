@@ -1,4 +1,4 @@
-import { TedToolName } from "./tedTools.js";
+import { TedToolName } from "./tedTools";
 export declare function executeTedTool(args: {
     userId: string;
     name: TedToolName;
@@ -35,6 +35,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     checkoutUrl?: never;
     contactsExported?: never;
@@ -65,6 +66,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     checkoutUrl?: never;
     contactsExported?: never;
@@ -95,6 +97,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     checkoutUrl?: never;
     contactsExported?: never;
@@ -113,8 +116,8 @@ export declare function executeTedTool(args: {
 } | {
     ok: boolean;
     error: string;
-    required: number;
-    available: number;
+    required: any;
+    available: any;
     suggestion: string;
     details?: never;
     balance?: never;
@@ -125,6 +128,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     checkoutUrl?: never;
     contactsExported?: never;
@@ -155,6 +159,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     checkoutUrl?: never;
     contactsExported?: never;
@@ -185,6 +190,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     checkoutUrl?: never;
     contactsExported?: never;
@@ -208,12 +214,20 @@ export declare function executeTedTool(args: {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
+        status: import(".prisma/client").$Enums.LeadSearchStatus;
         niche: string | null;
         location: string | null;
         maxLeads: number;
-        status: import(".prisma/client").$Enums.LeadSearchStatus;
         errorMessage: string | null;
-        filters: import("@prisma/client/runtime/client.js").JsonValue | null;
+        filters: import("@prisma/client/runtime/client").JsonValue | null;
+        contactsFoundCount: number;
+        crawledCount: number;
+        discoveredCount: number;
+        enrichedCount: number;
+        creditsCharged: number;
+        totalFound: number;
+        totalDeduped: number;
+        totalNetNew: number;
     };
     error?: never;
     details?: never;
@@ -227,6 +241,7 @@ export declare function executeTedTool(args: {
     message?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     checkoutUrl?: never;
     contactsExported?: never;
@@ -260,6 +275,7 @@ export declare function executeTedTool(args: {
         isDecisionMaker: boolean;
         score: number | null;
     }[];
+    previewCap: number;
     error?: never;
     details?: never;
     balance?: never;
@@ -289,8 +305,8 @@ export declare function executeTedTool(args: {
 } | {
     ok: boolean;
     error: string;
-    required: number;
-    available: number;
+    required: any;
+    available: any;
     estimatedExportContacts: number;
     suggestion: string;
     checkoutUrl: string;
@@ -303,6 +319,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     contactsExported?: never;
     csv?: never;
     url?: never;
@@ -333,6 +350,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     checkoutUrl?: never;
     url?: never;
@@ -362,6 +380,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     checkoutUrl?: never;
     contactsExported?: never;
@@ -400,6 +419,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     checkoutUrl?: never;
     contactsExported?: never;
@@ -434,6 +454,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     checkoutUrl?: never;
     contactsExported?: never;
@@ -465,6 +486,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     checkoutUrl?: never;
     contactsExported?: never;
@@ -494,6 +516,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     checkoutUrl?: never;
     contactsExported?: never;
@@ -525,6 +548,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     contactsExported?: never;
     csv?: never;
@@ -557,6 +581,7 @@ export declare function executeTedTool(args: {
     leadSearch?: never;
     count?: never;
     leads?: never;
+    previewCap?: never;
     estimatedExportContacts?: never;
     checkoutUrl?: never;
     contactsExported?: never;

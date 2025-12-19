@@ -5,12 +5,14 @@ exports.getOrCreateWalletForUser = getOrCreateWalletForUser;
 exports.getCreditBalance = getCreditBalance;
 exports.addCredits = addCredits;
 exports.consumeCredits = consumeCredits;
-const db_js_1 = require("../db.js");
-const logger_js_1 = require("../logger.js");
+const db_1 = require("../db");
+const logger_1 = require("../logger");
 /**
  * Custom error for credit-related issues
  */
 class CreditError extends Error {
+    code;
+    details;
     constructor(code, message, details) {
         super(message);
         this.code = code;
@@ -25,12 +27,12 @@ exports.CreditError = CreditError;
  * Free users get a monthly refresh of 100 credits (capped at 100 total).
  */
 async function getOrCreateWalletForUser(userId) {
-    let wallet = await db_js_1.prisma.aiCreditWallet.findUnique({
+    let wallet = await db_1.prisma.aiCreditWallet.findUnique({
         where: { userId },
     });
     if (!wallet) {
         // New users start with 100 credits
-        wallet = await db_js_1.prisma.aiCreditWallet.create({
+        wallet = await db_1.prisma.aiCreditWallet.create({
             data: {
                 userId,
                 balance: 100,
@@ -38,7 +40,7 @@ async function getOrCreateWalletForUser(userId) {
             },
         });
         // Record the initial credit grant
-        await db_js_1.prisma.aiCreditTransaction.create({
+        await db_1.prisma.aiCreditTransaction.create({
             data: {
                 walletId: wallet.id,
                 change: 100,
@@ -46,7 +48,7 @@ async function getOrCreateWalletForUser(userId) {
                 metadata: { type: "new_user_bonus" },
             },
         });
-        logger_js_1.logger.info(`Created new AI credit wallet for user: ${userId} with 100 starting credits`);
+        logger_1.logger.info(`Created new AI credit wallet for user: ${userId} with 100 starting credits`);
     }
     else {
         // Check if free user needs monthly refresh
@@ -65,7 +67,7 @@ async function maybeRefreshFreeUserCredits(wallet) {
     // Check if it's been at least 30 days since last topup
     if (daysSinceTopup >= 30) {
         // Check if user is on a paid plan
-        const user = await db_js_1.prisma.user.findUnique({
+        const user = await db_1.prisma.user.findUnique({
             where: { id: wallet.userId },
             include: {
                 subscriptions: {
@@ -79,15 +81,15 @@ async function maybeRefreshFreeUserCredits(wallet) {
         if (!hasPaidPlan && wallet.balance < 100) {
             const topupAmount = Math.min(100, 100 - wallet.balance);
             if (topupAmount > 0) {
-                await db_js_1.prisma.$transaction([
-                    db_js_1.prisma.aiCreditWallet.update({
+                await db_1.prisma.$transaction([
+                    db_1.prisma.aiCreditWallet.update({
                         where: { id: wallet.id },
                         data: {
                             balance: { increment: topupAmount },
                             lastTopupAt: now,
                         },
                     }),
-                    db_js_1.prisma.aiCreditTransaction.create({
+                    db_1.prisma.aiCreditTransaction.create({
                         data: {
                             walletId: wallet.id,
                             change: topupAmount,
@@ -99,7 +101,7 @@ async function maybeRefreshFreeUserCredits(wallet) {
                         },
                     }),
                 ]);
-                logger_js_1.logger.info(`Monthly refresh: Added ${topupAmount} credits to free user ${wallet.userId} (capped at 100)`);
+                logger_1.logger.info(`Monthly refresh: Added ${topupAmount} credits to free user ${wallet.userId} (capped at 100)`);
             }
         }
     }
@@ -120,12 +122,12 @@ async function addCredits(userId, amount, reason, metadata) {
         throw new Error("Credit amount must be positive");
     }
     const wallet = await getOrCreateWalletForUser(userId);
-    await db_js_1.prisma.$transaction([
-        db_js_1.prisma.aiCreditWallet.update({
+    await db_1.prisma.$transaction([
+        db_1.prisma.aiCreditWallet.update({
             where: { id: wallet.id },
             data: { balance: { increment: amount } },
         }),
-        db_js_1.prisma.aiCreditTransaction.create({
+        db_1.prisma.aiCreditTransaction.create({
             data: {
                 walletId: wallet.id,
                 change: amount,
@@ -134,7 +136,7 @@ async function addCredits(userId, amount, reason, metadata) {
             },
         }),
     ]);
-    logger_js_1.logger.info(`Added ${amount} credits to user ${userId}. Reason: ${reason}`);
+    logger_1.logger.info(`Added ${amount} credits to user ${userId}. Reason: ${reason}`);
 }
 /**
  * Consume credits from a user's wallet.
@@ -152,12 +154,12 @@ async function consumeCredits(userId, amount, reason, metadata) {
             available: wallet.balance,
         });
     }
-    await db_js_1.prisma.$transaction([
-        db_js_1.prisma.aiCreditWallet.update({
+    await db_1.prisma.$transaction([
+        db_1.prisma.aiCreditWallet.update({
             where: { id: wallet.id },
             data: { balance: { decrement: amount } },
         }),
-        db_js_1.prisma.aiCreditTransaction.create({
+        db_1.prisma.aiCreditTransaction.create({
             data: {
                 walletId: wallet.id,
                 change: -amount,
@@ -166,6 +168,6 @@ async function consumeCredits(userId, amount, reason, metadata) {
             },
         }),
     ]);
-    logger_js_1.logger.info(`Consumed ${amount} credits from user ${userId}. Reason: ${reason}`);
+    logger_1.logger.info(`Consumed ${amount} credits from user ${userId}. Reason: ${reason}`);
 }
 //# sourceMappingURL=creditService.js.map

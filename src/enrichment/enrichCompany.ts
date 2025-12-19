@@ -28,7 +28,7 @@ export async function enrichCompany(
   // Multi-source enrichment: Clearbit, LinkedIn, BuiltWith, AI fallback
 
   // 1. Clearbit (or similar)
-  let clearbitData: Partial<EnrichmentResult> = {};
+  const clearbitData: Partial<EnrichmentResult> = {};
   if (process.env.CLEARBIT_API_KEY) {
     try {
       // TODO: Implement Clearbit API call here
@@ -40,7 +40,7 @@ export async function enrichCompany(
   }
 
   // 2. LinkedIn (scraping or API)
-  let linkedinData: Partial<EnrichmentResult> = {};
+  const linkedinData: Partial<EnrichmentResult> = {};
   if (process.env.LINKEDIN_API_KEY) {
     try {
       // TODO: Implement LinkedIn API call or scraping here
@@ -51,7 +51,7 @@ export async function enrichCompany(
   }
 
   // 3. BuiltWith/Wappalyzer (tech stack)
-  let techData: Partial<EnrichmentResult> = {};
+  const techData: Partial<EnrichmentResult> = {};
   if (process.env.BUILTWITH_API_KEY) {
     try {
       // TODO: Implement BuiltWith API call here
@@ -81,7 +81,7 @@ export async function enrichCompany(
         if (rawContent) {
           try {
             aiData = JSON.parse(rawContent);
-          } catch (parseError) {
+          } catch {
             logger.error(`Failed to parse AI response as JSON: ${rawContent}`);
           }
         }

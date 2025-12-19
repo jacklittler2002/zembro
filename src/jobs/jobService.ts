@@ -1,6 +1,6 @@
 import { prisma } from "../db";
 import { logger } from "../logger";
-import { CrawlJob, CrawlJobStatus, CrawlJobType } from "./jobTypes";
+import { CrawlJob, CrawlJobType } from "./jobTypes";
 
 export async function enqueueJob(params: {
   type: CrawlJobType;

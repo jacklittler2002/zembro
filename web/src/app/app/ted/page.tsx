@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { supabaseBrowser } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import { LowCreditWarning } from "@/components/LowCreditWarning";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
@@ -37,7 +37,8 @@ export default function TedPage() {
   useEffect(() => {
     async function fetchCreditBalance() {
       try {
-        const { data: session } = await supabaseBrowser.auth.getSession();
+        const supabase = await getSupabaseClient();
+        const { data: session } = await supabase.auth.getSession();
         const token = session.session?.access_token;
 
         const res = await fetch(`${API_BASE}/api/ted/balance`, {
@@ -65,7 +66,8 @@ export default function TedPage() {
     async function loadConversations() {
       try {
         setIsLoadingConversations(true);
-        const { data: session } = await supabaseBrowser.auth.getSession();
+        const supabase = await getSupabaseClient();
+        const { data: session } = await supabase.auth.getSession();
         const token = session.session?.access_token;
         const res = await fetch(`${API_BASE}/api/ted/conversations`, {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -85,7 +87,8 @@ export default function TedPage() {
 
   const loadConversation = async (id: string) => {
     try {
-      const { data: session } = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient();
+      const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
       const res = await fetch(`${API_BASE}/api/ted/conversation/${id}`, {
         headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -105,7 +108,7 @@ export default function TedPage() {
   if (authLoading) {
     return (
       <div className="p-8 flex items-center justify-center">
-        <div style={{ color: "var(--color-sidebar-border)" }}>Loading...</div>
+        <div className="text-sidebar">Loading...</div>
       </div>
     );
   }
@@ -119,7 +122,8 @@ export default function TedPage() {
     setIsLoading(true);
 
     try {
-      const { data: session } = await supabaseBrowser.auth.getSession();
+      const supabase = await getSupabaseClient();
+      const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
 
       const res = await fetch(`${API_BASE}/api/ted/chat`, {
@@ -201,18 +205,14 @@ export default function TedPage() {
           <aside className="md:col-span-1">
             <div className="rounded-lg border bg-white shadow-sm">
               <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
-                <h3 className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>Conversations</h3>
-                <button
-                  onClick={() => { setConversationId(null); setMessages([]); }}
-                  className="text-xs px-2 py-1 rounded border"
-                  style={{ borderColor: "var(--color-border)", color: "var(--color-sidebar-border)" }}
-                >New</button>
+                <h3 className="text-sm font-semibold text-ui">Conversations</h3>
+                <button onClick={() => { setConversationId(null); setMessages([]); }} className="btn btn-ghost text-sidebar">New</button>
               </div>
               <div className="max-h-[60vh] overflow-y-auto">
                 {isLoadingConversations ? (
-                  <div className="p-4 text-sm text-gray-500">Loading...</div>
+                  <div className="p-4 text-sm text-ui">Loading...</div>
                 ) : conversations.length === 0 ? (
-                  <div className="p-4 text-sm text-gray-500">No conversations yet</div>
+                  <div className="p-4 text-sm text-ui">No conversations yet</div>
                 ) : (
                   conversations.map((c) => (
                     <button
@@ -221,8 +221,8 @@ export default function TedPage() {
                       className={`w-full text-left px-4 py-3 border-b hover:bg-gray-50 ${conversationId === c.id ? "bg-gray-50" : ""}`}
                       style={{ borderColor: "#F0F2F5" }}
                     >
-                      <div className="text-sm" style={{ color: "var(--color-text)" }}>{c.title || "Chat with TED"}</div>
-                      <div className="text-xs text-gray-500">{new Date(c.createdAt).toLocaleString()}</div>
+                      <div className="text-sm text-ui">{c.title || "Chat with TED"}</div>
+                      <div className="text-xs text-ui">{new Date(c.createdAt).toLocaleString()}</div>
                     </button>
                   ))
                 )}
@@ -237,21 +237,11 @@ export default function TedPage() {
           {creditBalance !== null && <LowCreditWarning creditBalance={creditBalance} />}
           
           <div className="mb-8">
-            <h2 className="text-2xl font-semibold mb-2" style={{ color: "var(--color-text)" }}>
-              Chat with TED
-            </h2>
-            <p style={{ color: "var(--color-sidebar-border)" }}>
-              Ask TED to find leads, build lists, or answer questions about your data.
-            </p>
+            <h2 className="text-2xl font-semibold mb-2 text-ui">Chat with TED</h2>
+            <p className="text-ui-muted">Ask TED to find leads, build lists, or answer questions about your data.</p>
             {/* Credit Widget */}
-            <div className="mt-3 flex items-center gap-3">
-              <button
-                onClick={() => setShowCreditModal(true)}
-                className="px-3 py-1.5 rounded-lg text-sm bg-white border hover:bg-gray-50"
-                style={{ borderColor: "var(--color-border)", color: "var(--color-sidebar-border)" }}
-              >
-                💳 Credits: {creditBalance ?? "..."}
-              </button>
+              <div className="mt-3 flex items-center gap-3">
+              <button onClick={() => setShowCreditModal(true)} className="btn btn-ghost text-accent">Credits: {creditBalance ?? "..."}</button>
               <button
                 onClick={() => setMessage("I need more credits")}
                 className="px-3 py-1.5 rounded-lg text-sm bg-purple-600 text-white hover:bg-purple-700"
@@ -261,39 +251,15 @@ export default function TedPage() {
             </div>
             {/* Quick Actions Toolbar */}
             <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                onClick={() => { setMessage("Find me 50 dentists in London"); }}
-                className="px-3 py-2 text-sm rounded-lg border bg-white hover:bg-gray-50"
-                style={{ borderColor: "var(--color-border)", color: "var(--color-sidebar-border)" }}
-              >
-                🔎 Search Leads
-              </button>
-              <button
-                onClick={() => { setMessage("Check my credits"); }}
-                className="px-3 py-2 text-sm rounded-lg border bg-white hover:bg-gray-50"
-                style={{ borderColor: "var(--color-border)", color: "var(--color-sidebar-border)" }}
-              >
-                💳 Check Credits
-              </button>
-              <button
-                onClick={() => { setMessage("Show my latest results"); }}
-                className="px-3 py-2 text-sm rounded-lg border bg-white hover:bg-gray-50"
-                style={{ borderColor: "var(--color-border)", color: "var(--color-sidebar-border)" }}
-              >
-                📊 View Results
-              </button>
-              <button
-                onClick={() => { setMessage("Export these leads to CSV"); }}
-                className="px-3 py-2 text-sm rounded-lg border bg-white hover:bg-gray-50"
-                style={{ borderColor: "var(--color-border)", color: "var(--color-sidebar-border)" }}
-              >
-                📥 Export CSV
-              </button>
+              <button onClick={() => { setMessage("Find me 50 dentists in London"); }} className="btn btn-ghost text-accent">Search Leads</button>
+              <button onClick={() => { setMessage("Check my credits"); }} className="btn btn-ghost text-accent">Check Credits</button>
+              <button onClick={() => { setMessage("Show my latest results"); }} className="btn btn-ghost text-accent">View Results</button>
+              <button onClick={() => { setMessage("Export these leads to CSV"); }} className="btn btn-ghost text-accent">Export CSV</button>
             </div>
           </div>
 
           {/* Messages */}
-          <div className="space-y-4 mb-24">
+          <div className="space-y-4 mb-24 text-ui">
             {messages.length === 0 ? (
               <div className="text-center py-12">
                 <div className="mb-4 flex justify-center">
@@ -306,50 +272,29 @@ export default function TedPage() {
                     <path d="M24 40 Q32 46 40 40" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"/>
                   </svg>
                 </div>
-                <p className="text-lg mb-4" style={{ color: "var(--color-sidebar-border)" }}>
-                  Start a conversation with TED
-                </p>
+                <p className="text-lg mb-4 text-accent">Start a conversation with TED</p>
                 <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto">
                   <button
                     onClick={() => setMessage("Find me 50 dentists in London")}
-                    className="p-4 bg-white border rounded-lg text-left hover:shadow-md transition-shadow"
-                    style={{ borderColor: "var(--color-border)" }}
+                    className="p-4 bg-surface border border-ui rounded-lg text-left hover:shadow-md transition-shadow"
                   >
-                    <p className="font-medium mb-1" style={{ color: "var(--color-text)" }}>
-                      Find leads
-                    </p>
-                    <p className="text-sm" style={{ color: "var(--color-sidebar-border)" }}>
-                      "Find me 50 dentists in London"
-                    </p>
+                    <p className="font-medium mb-1 text-ui">Find leads</p>
+                    <p className="text-sm text-ui-muted">"Find me 50 dentists in London"</p>
                   </button>
                   <button
                     onClick={() => setMessage("Check my credits")}
-                    className="p-4 bg-white border rounded-lg text-left hover:shadow-md transition-shadow"
-                    style={{ borderColor: "var(--color-border)" }}
+                    className="p-4 bg-surface border border-ui rounded-lg text-left hover:shadow-md transition-shadow"
                   >
-                    <p className="font-medium mb-1" style={{ color: "var(--color-text)" }}>
-                      Check balance
-                    </p>
-                    <p className="text-sm" style={{ color: "var(--color-sidebar-border)" }}>
-                      "Check my credits"
-                    </p>
+                    <p className="font-medium mb-1 text-ui">Check balance</p>
+                    <p className="text-sm text-ui">"Check my credits"</p>
                   </button>
                 </div>
               </div>
             ) : (
               <>
                 {messages.map((msg, i) => (
-                  <div
-                    key={i}
-                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className="max-w-2xl px-4 py-3 rounded-lg"
-                      style={{
-                        backgroundColor: msg.role === "user" ? "var(--color-accent)" : "var(--color-hero)",
-                        color: msg.role === "user" ? "white" : "var(--color-text)",
-                      }}
-                    >
+                  <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-2xl px-4 py-3 rounded-lg ${msg.role === "user" ? "bg-accent text-white" : "bg-hero text-ui"}`}>
                       <p className="whitespace-pre-wrap">{msg.content}</p>
                       
                       {/* CSV Download Button */}
@@ -358,7 +303,7 @@ export default function TedPage() {
                           onClick={() => downloadCsv(msg.csv!, `leads-${Date.now()}.csv`)}
                           className="mt-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                         >
-                          📥 Download CSV
+                          Download CSV
                         </button>
                       )}
 
@@ -370,7 +315,7 @@ export default function TedPage() {
                           rel="noopener noreferrer"
                           className="mt-3 block px-4 py-2 bg-purple-600 text-white text-center rounded-lg hover:bg-purple-700 transition-colors"
                         >
-                          🚀 Upgrade or Top-up Credits
+                          Upgrade or Top-up Credits
                         </a>
                       )}
                     </div>
@@ -378,7 +323,7 @@ export default function TedPage() {
                 ))}
                 {isLoading && (
                   <div className="flex justify-start">
-                    <div className="max-w-2xl px-4 py-3 rounded-lg" style={{ backgroundColor: "var(--color-hero)" }}>
+                    <div className="max-w-2xl px-4 py-3 rounded-lg bg-hero">
                       <div className="flex items-center space-x-2">
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
@@ -397,7 +342,7 @@ export default function TedPage() {
       </div>
 
       {/* Input area */}
-      <div className="border-t p-4 bg-white" style={{ borderColor: "var(--color-border)" }}>
+      <div className="border-t border-ui p-4 bg-white">
         <div className="max-w-4xl mx-auto flex gap-4">
           <input
             type="text"
@@ -406,40 +351,31 @@ export default function TedPage() {
             onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
             placeholder="Ask TED anything..."
             disabled={isLoading}
-            className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all text-gray-700 hover:border-gray-400 disabled:opacity-50"
+            className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all hover:border-gray-400 disabled:opacity-50 text-ui"
           />
           <button
             onClick={handleSend}
             disabled={!message.trim() || isLoading}
-            className="px-8 py-3 rounded-lg font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: "var(--color-secondary)" }}
+            className="px-8 py-3 rounded-lg font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity bg-secondary"
           >
             {isLoading ? "..." : "Send"}
           </button>
         </div>
-        <p className="text-xs text-center mt-2" style={{ color: "var(--color-sidebar-border)" }}>
-          Each message costs 1 credit. Current balance: {creditBalance ?? "..."} credits
-        </p>
+        <p className="text-xs text-center mt-2 text-ui">Each message costs 1 credit. Current balance: {creditBalance ?? "..."} credits</p>
       </div>
       {/* Credit Details Modal */}
       {showCreditModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
           <div className="bg-white rounded-lg w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold" style={{ color: "var(--color-text)" }}>Credit Balance</h3>
-            <p className="mt-2" style={{ color: "var(--color-sidebar-border)" }}>Current balance: <strong>{creditBalance ?? "..."}</strong> credits</p>
-            <ul className="mt-4 text-sm" style={{ color: "var(--color-sidebar-border)" }}>
+            <h3 className="text-lg font-semibold text-ui">Credit Balance</h3>
+            <p className="mt-2 text-ui">Current balance: <strong>{creditBalance ?? "..."}</strong> credits</p>
+            <ul className="mt-4 text-sm text-ui">
               <li>• TED message: 1 credit</li>
               <li>• Discovery/Crawl/Enrich may use more credits depending on quantity</li>
               <li>• Export CSV: small credit cost per lead</li>
             </ul>
             <div className="mt-6 flex gap-3">
-              <button
-                onClick={() => setShowCreditModal(false)}
-                className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
-                style={{ borderColor: "var(--color-border)", color: "var(--color-sidebar-border)" }}
-              >
-                Close
-              </button>
+              <button onClick={() => setShowCreditModal(false)} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 border-ui text-ui">Close</button>
               <button
                 onClick={() => { setShowCreditModal(false); setMessage("I need more credits"); }}
                 className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"

@@ -1,5 +1,5 @@
 import { prisma } from "../db.js";
-import { logger } from "../logger.js";
+import { logger } from "../logger";
 import { CrawlJob } from "../jobs/jobTypes.js";
 import { processExtractedEmails } from "../cleaning/processEmails.js";
 import { scoreCompany } from "../scoring/scoreCompany.js";
@@ -82,8 +82,10 @@ export async function handleSiteCrawl(job: CrawlJob) {
   });
 
 
-  // Insert contacts (emails)
+  // Insert contacts (emails) and process for delivery
   let newContactsCreated = 0;
+  const contactsToProcess = [];
+
   for (const email of emails) {
     const contact = await prisma.contact.upsert({
       where: {
@@ -101,20 +103,65 @@ export async function handleSiteCrawl(job: CrawlJob) {
         source: "site_crawl",
       },
     });
+
     if (contact.createdAt.getTime() === contact.updatedAt.getTime()) {
       newContactsCreated++;
     }
-  }
 
-  // Increment crawledCount and contactsFoundCount on LeadSearch
-  if (job.leadSearchId) {
-    await prisma.leadSearch.update({
-      where: { id: job.leadSearchId },
-      data: {
-        crawledCount: { increment: 1 },
-        contactsFoundCount: { increment: newContactsCreated },
+    // Collect contacts for processing
+    contactsToProcess.push({
+      id: contact.id,
+      email: contact.email,
+      company: {
+        id: company.id,
+        domain: company.domain,
+        websiteUrl: company.websiteUrl,
+        name: company.name,
+        city: company.city,
+        country: company.country,
+        googleMapsPlaceId: null, // TODO: Add when available
       },
     });
+  }
+
+  // Process contacts through Instantly-style credit system
+  let deliveryResult = null;
+  if (job.leadSearchId && contactsToProcess.length > 0) {
+    const { InstantlyCreditService } = await import("../leadSearch/instantlyCreditService");
+
+    // Get the user ID for this lead search
+    const leadSearch = await prisma.leadSearch.findUnique({
+      where: { id: job.leadSearchId },
+      select: { userId: true },
+    });
+
+    if (leadSearch) {
+      deliveryResult = await InstantlyCreditService.processLeadDelivery(
+        leadSearch.userId,
+        job.leadSearchId,
+        contactsToProcess
+      );
+    }
+  }
+
+  // Update LeadSearch counters
+  if (job.leadSearchId) {
+    const updateData: any = {
+      crawledCount: { increment: 1 },
+    };
+
+    // Use delivery result if available, otherwise fall back to simple counting
+    if (deliveryResult) {
+      updateData.contactsFoundCount = { increment: deliveryResult.totalFound };
+    } else {
+      updateData.contactsFoundCount = { increment: newContactsCreated };
+    }
+
+    await prisma.leadSearch.update({
+      where: { id: job.leadSearchId },
+      data: updateData,
+    });
+
     // Check for completion
     const { maybeMarkLeadSearchDone } = await import("../leadSearch/leadSearchProgressService");
     await maybeMarkLeadSearchDone(job.leadSearchId);
